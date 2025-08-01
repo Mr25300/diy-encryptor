@@ -97,21 +97,24 @@ void cbcDecrypt(std::vector<Block<cols, rows>>& cipherText, const KeySchedule<co
     }
 }
 
-std::vector<Block<cols, rows>> textToBlocks(std::string text) {
+std::vector<Block<cols, rows>> textToBlocks(const std::string& text) {
     std::vector<Block<cols, rows>> blocks;
 
     size_t textLength = text.length();
-    size_t padLength = blockSize - textLength % blockSize;
 
-    text += std::string(padLength, '\0');
+    size_t blockCount = textLength / blockSize;
 
-    size_t blockCount = (textLength + padLength) / blockSize;
+    if (textLength % blockSize != 0) {
+        blockCount++;
+    }
 
     for (int b = 0; b < blockCount; b++) {
         Block<cols, rows> block;
 
         for (int i = 0; i < blockSize; i++) {
-            block[i / blockSize][i % blockSize] = static_cast<GF256>(text[b * blockSize + i]);
+            int stringInd = b * blockSize + i;
+
+            block[i / blockSize][i % blockSize] = stringInd < textLength ? static_cast<GF256>(text[stringInd]) : '\0';
         }
 
         blocks.push_back(block);
@@ -189,6 +192,7 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    outFile.seekp(0);
     outFile.write(newData.data(), newData.size());
     outFile.close();
 
