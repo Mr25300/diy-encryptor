@@ -1,3 +1,4 @@
 - Implement multiplicative inverse (division) for GF(2^8)
 - Add way to compute for inverse of mix columns matrix in GF(2^8)
 - Create algorithm for generating the substitution box
+- Optimize all classes, methods and ensure memory is managed properly

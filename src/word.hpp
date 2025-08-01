@@ -47,8 +47,6 @@ public:
         return sum;
     }
 
-    // friend Word& operator*=(Word<len>& word, const Matrix<len>& mat);
-
     constexpr void rotWord(bool invDir = false) {
         std::array<GF256, len> temp_bytes = bytes;
 
