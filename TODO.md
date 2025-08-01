@@ -1,0 +1,2 @@
+- Add way to compute for inverse of mix columns matrix in GF(2^8)
+- Create algorithm for generating the substitution box
