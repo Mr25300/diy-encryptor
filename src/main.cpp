@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <sstream>
+#include <filesystem>
 #include <string>
 #include <array>
 #include <vector>
@@ -10,6 +10,7 @@
 #include "matrix.hpp"
 #include "block.hpp"
 #include "keyschedule.hpp"
+#include "blockstring.hpp"
 
 constexpr size_t cols = 4;
 constexpr size_t rows = 4;
@@ -66,78 +67,16 @@ constexpr Matrix<4> mixColMatrixInv = Matrix<4>({
     Word<4>({11, 13, 9, 14})
 });
 
-const Block<cols, rows> IV = Block<cols, rows>({
-    Word<rows>({0x01, 0x23, 0x45, 0x67}),
-    Word<rows>({0x89, 0xAB, 0xCD, 0xEF}),
-    Word<rows>({0xFE, 0xDC, 0xBA, 0x98}),
-    Word<rows>({0x76, 0x54, 0x32, 0x10})
-});
+// const Block<cols, rows> ivBlock = Block<cols, rows>({
+//     Word<rows>({0x01, 0x23, 0x45, 0x67}),
+//     Word<rows>({0x89, 0xAB, 0xCD, 0xEF}),
+//     Word<rows>({0xFE, 0xDC, 0xBA, 0x98}),
+//     Word<rows>({0x76, 0x54, 0x32, 0x10})
+// });
 
-void cbcEncrypt(std::vector<Block<cols, rows>>& plainText, const KeySchedule<cols, rows, rounds> keySchedule) {
-    Block<cols, rows> prevBlock = IV;
+const Block<cols, rows> ivBlock{};
 
-    for (Block<cols, rows>& block : plainText) {
-        block.addKey(prevBlock);
-        block.encrypt(keySchedule, subBox, mixColMatrix);
-
-        prevBlock = block;
-    }
-}
-
-void cbcDecrypt(std::vector<Block<cols, rows>>& cipherText, const KeySchedule<cols, rows, rounds> keySchedule) {
-    Block<cols, rows> prevBlock = IV;
-
-    for (Block<cols, rows>& block : cipherText) {
-        Block<cols, rows> cipherBlock = block;
-
-        block.decrypt(keySchedule, subBoxInv, mixColMatrixInv);
-        block.addKey(prevBlock);
-
-        prevBlock = cipherBlock;
-    }
-}
-
-std::vector<Block<cols, rows>> textToBlocks(const std::string& text) {
-    std::vector<Block<cols, rows>> blocks;
-
-    size_t textLength = text.length();
-
-    size_t blockCount = textLength / blockSize;
-
-    if (textLength % blockSize != 0) {
-        blockCount++;
-    }
-
-    for (int b = 0; b < blockCount; b++) {
-        Block<cols, rows> block;
-
-        for (int i = 0; i < blockSize; i++) {
-            int stringInd = b * blockSize + i;
-
-            block[i / blockSize][i % blockSize] = stringInd < textLength ? static_cast<GF256>(text[stringInd]) : '\0';
-        }
-
-        blocks.push_back(block);
-    }
-
-    return blocks;
-}
-
-std::string blocksToText(const std::vector<Block<cols, rows>>& blocks) {
-    std::string text = "";
-
-    for (Block<cols, rows> block : blocks) {
-        for (int c = 0; c < cols; c++) {
-            for (int r = 0; r < rows; r++) {
-                text += static_cast<char>(block[c][r].get());
-            }
-        }
-    }
-
-    return text;
-}
-
-Block<cols, rows> getKey(std::string password) {
+Block<cols, rows> getKey(std::string password) { // Change this to static constructor in block class
     Block<cols, rows> key;
 
     for (int i = 0; i < blockSize; i++) {
@@ -163,6 +102,8 @@ int main(int argc, char *argv[]) {
         return 1;
     }
 
+    bool encrypted = std::filesystem::path(filePath).extension() == ".enc";
+
     std::streamsize fileSize = inFile.tellg();
     inFile.seekg(0);
 
@@ -171,23 +112,22 @@ int main(int argc, char *argv[]) {
     inFile.close();
 
     std::string password;
-
-    std::cout << "Input password key: ";
+    std::cout << (encrypted ? "Decrypting" : "Encrypting") << " file, input password key: ";
     std::cin >> password;
 
     Block<cols, rows> key = getKey(password);
     KeySchedule<cols, rows, rounds> keySchedule = KeySchedule<cols, rows, rounds>(key, subBox, roundConstants);
+    BlockString<cols, rows> blockString = BlockString<cols, rows>(fileData, encrypted);
 
-    std::vector<Block<cols, rows>> textBlocks = textToBlocks(fileData);
+    if (encrypted) blockString.cbcDecrypt(keySchedule, subBoxInv, mixColMatrixInv, ivBlock);
+    else blockString.cbcEncrypt(keySchedule, subBox, mixColMatrix, ivBlock);
 
-    cbcEncrypt(textBlocks, keySchedule); // Add method/flag to check when file is encrypted or not, and then change to decrypt function
-
-    std::string newData = blocksToText(textBlocks);
+    std::string newData = blockString.getText(encrypted);
 
     std::ofstream outFile(filePath, std::ios::binary);
 
     if (!outFile) {
-        std::cerr << "Failed to write to file: " + filePath;
+        std::cerr << "Failed to write to file: " << filePath;
 
         return 1;
     }
@@ -195,6 +135,14 @@ int main(int argc, char *argv[]) {
     outFile.seekp(0);
     outFile.write(newData.data(), newData.size());
     outFile.close();
+
+    std::string newPath = encrypted ? filePath.substr(0, filePath.length() - 4) : filePath + ".enc";
+
+    if (std::rename(filePath.c_str(), newPath.c_str()) != 0) {
+        std::cerr << "Failed to rename file: " << filePath;
+
+        return 1;
+    }
 
     return 0;
 }
