@@ -87,6 +87,11 @@ Block<cols, rows> getKey(std::string password) { // Change this to static constr
 }
 
 int main(int argc, char *argv[]) {
+    GF256 test = 0b00000111;
+    GF256 test2 = test.inv();
+
+    std::cout << test.asBinary() << "\n" << test2.asBinary() << "\n";
+
     if (argc != 2) {
         std::cout << "Error";
 

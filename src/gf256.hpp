@@ -13,6 +13,7 @@ class GF256 {
         uint8_t result = 0;
 
         for (int i = 0; i < 8; i++) {
+            // if (b == 0) break;
             if (b & 1) result ^= a;
 
             bool hasHighBit = a & 0b10000000;
@@ -40,7 +41,9 @@ public:
         return *this;
     }
 
-    // constexpr GF256 inv() const;
+    constexpr GF256 inv() const {
+        return *this; // Use extended euclidean algorithm
+    }
 
     constexpr GF256 operator+(GF256 other) const {
         return GF256(value ^ other.value);
