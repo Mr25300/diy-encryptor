@@ -87,78 +87,62 @@ Block<cols, rows> getKey(std::string password) { // Change this to static constr
 }
 
 int main(int argc, char *argv[]) {
-    // GF256 a = 0b00011011;
-    // GF256 b = 0b10010101;
-    // GF256 r = a * b;
+    if (argc != 2) {
+        std::cerr << "Error";
 
-    // std::cout << a.asPoly() << "\n" << b.asPoly() << "\n" << r.asPoly() << "\n";
+        return 1;
+    }
 
-    // GF256 r = GF256::gfLongDivide(0b101001, 0b10100101000).quotient;
+    std::string filePath = argv[1];
+    std::ifstream inFile(filePath, std::ios::binary | std::ios::ate);
 
-    // std::cout << r.asBinary();
+    if (!inFile) {
+        std::cerr << "Failed to read from file: " + filePath;
 
-    GF256 a = 0b10010101;
-    GF256 aInv = a.inv();
-    GF256 r = a * aInv;
+        return 1;
+    }
 
-    std::cout << a.asPoly() << "\n" << aInv.asPoly() << "\n" << r.asPoly();
+    bool encrypted = std::filesystem::path(filePath).extension() == ".enc";
 
-    // if (argc != 2) {
-    //     std::cerr << "Error";
+    std::streamsize fileSize = inFile.tellg();
+    inFile.seekg(0);
 
-    //     return 1;
-    // }
+    std::string fileData(fileSize, '\0');
+    inFile.read(fileData.data(), fileSize);
+    inFile.close();
 
-    // std::string filePath = argv[1];
-    // std::ifstream inFile(filePath, std::ios::binary | std::ios::ate);
+    std::string password;
+    std::cout << (encrypted ? "Decrypting" : "Encrypting") << " file, input password key: ";
+    std::cin >> password;
 
-    // if (!inFile) {
-    //     std::cerr << "Failed to read from file: " + filePath;
+    Block<cols, rows> key = getKey(password);
+    KeySchedule<cols, rows, rounds> keySchedule = KeySchedule<cols, rows, rounds>(key, subBox, roundConstants);
+    BlockString<cols, rows> blockString = BlockString<cols, rows>(fileData, encrypted);
 
-    //     return 1;
-    // }
+    if (encrypted) blockString.cbcDecrypt(keySchedule, subBoxInv, mixColMatrixInv, ivBlock);
+    else blockString.cbcEncrypt(keySchedule, subBox, mixColMatrix, ivBlock);
 
-    // bool encrypted = std::filesystem::path(filePath).extension() == ".enc";
+    std::string newData = blockString.getText(encrypted);
 
-    // std::streamsize fileSize = inFile.tellg();
-    // inFile.seekg(0);
+    std::ofstream outFile(filePath, std::ios::binary);
 
-    // std::string fileData(fileSize, '\0');
-    // inFile.read(fileData.data(), fileSize);
-    // inFile.close();
+    if (!outFile) {
+        std::cerr << "Failed to write to file: " << filePath;
 
-    // std::string password;
-    // std::cout << (encrypted ? "Decrypting" : "Encrypting") << " file, input password key: ";
-    // std::cin >> password;
+        return 1;
+    }
 
-    // Block<cols, rows> key = getKey(password);
-    // KeySchedule<cols, rows, rounds> keySchedule = KeySchedule<cols, rows, rounds>(key, subBox, roundConstants);
-    // BlockString<cols, rows> blockString = BlockString<cols, rows>(fileData, encrypted);
+    outFile.seekp(0);
+    outFile.write(newData.data(), newData.size());
+    outFile.close();
 
-    // if (encrypted) blockString.cbcDecrypt(keySchedule, subBoxInv, mixColMatrixInv, ivBlock);
-    // else blockString.cbcEncrypt(keySchedule, subBox, mixColMatrix, ivBlock);
+    std::string newPath = encrypted ? filePath.substr(0, filePath.length() - 4) : filePath + ".enc";
 
-    // std::string newData = blockString.getText(encrypted);
+    if (std::rename(filePath.c_str(), newPath.c_str()) != 0) {
+        std::cerr << "Failed to rename file: " << filePath;
 
-    // std::ofstream outFile(filePath, std::ios::binary);
+        return 1;
+    }
 
-    // if (!outFile) {
-    //     std::cerr << "Failed to write to file: " << filePath;
-
-    //     return 1;
-    // }
-
-    // outFile.seekp(0);
-    // outFile.write(newData.data(), newData.size());
-    // outFile.close();
-
-    // std::string newPath = encrypted ? filePath.substr(0, filePath.length() - 4) : filePath + ".enc";
-
-    // if (std::rename(filePath.c_str(), newPath.c_str()) != 0) {
-    //     std::cerr << "Failed to rename file: " << filePath;
-
-    //     return 1;
-    // }
-
-    // return 0;
+    return 0;
 }
