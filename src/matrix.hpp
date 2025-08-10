@@ -32,6 +32,10 @@ public:
         return Matrix<size>(vals);
     }
 
+    constexpr Matrix<size> inv() {
+
+    }
+
     Word<size> operator*(const Word<size>& word) const {
         return matMultiply(word);
     }

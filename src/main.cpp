@@ -87,67 +87,78 @@ Block<cols, rows> getKey(std::string password) { // Change this to static constr
 }
 
 int main(int argc, char *argv[]) {
-    GF256 test = 0b00000111;
-    GF256 test2 = test.inv();
+    // GF256 a = 0b00011011;
+    // GF256 b = 0b10010101;
+    // GF256 r = a * b;
 
-    std::cout << test.asBinary() << "\n" << test2.asBinary() << "\n";
+    // std::cout << a.asPoly() << "\n" << b.asPoly() << "\n" << r.asPoly() << "\n";
 
-    if (argc != 2) {
-        std::cout << "Error";
+    // GF256 r = GF256::gfLongDivide(0b101001, 0b10100101000).quotient;
 
-        return 1;
-    }
+    // std::cout << r.asBinary();
 
-    std::string filePath = argv[1];
-    std::ifstream inFile(filePath, std::ios::binary | std::ios::ate);
+    GF256 a = 0b10010101;
+    GF256 aInv = a.inv();
+    GF256 r = a * aInv;
 
-    if (!inFile) {
-        std::cerr << "Failed to read from file: " + filePath;
+    std::cout << a.asPoly() << "\n" << aInv.asPoly() << "\n" << r.asPoly();
 
-        return 1;
-    }
+    // if (argc != 2) {
+    //     std::cerr << "Error";
 
-    bool encrypted = std::filesystem::path(filePath).extension() == ".enc";
+    //     return 1;
+    // }
 
-    std::streamsize fileSize = inFile.tellg();
-    inFile.seekg(0);
+    // std::string filePath = argv[1];
+    // std::ifstream inFile(filePath, std::ios::binary | std::ios::ate);
 
-    std::string fileData(fileSize, '\0');
-    inFile.read(fileData.data(), fileSize);
-    inFile.close();
+    // if (!inFile) {
+    //     std::cerr << "Failed to read from file: " + filePath;
 
-    std::string password;
-    std::cout << (encrypted ? "Decrypting" : "Encrypting") << " file, input password key: ";
-    std::cin >> password;
+    //     return 1;
+    // }
 
-    Block<cols, rows> key = getKey(password);
-    KeySchedule<cols, rows, rounds> keySchedule = KeySchedule<cols, rows, rounds>(key, subBox, roundConstants);
-    BlockString<cols, rows> blockString = BlockString<cols, rows>(fileData, encrypted);
+    // bool encrypted = std::filesystem::path(filePath).extension() == ".enc";
 
-    if (encrypted) blockString.cbcDecrypt(keySchedule, subBoxInv, mixColMatrixInv, ivBlock);
-    else blockString.cbcEncrypt(keySchedule, subBox, mixColMatrix, ivBlock);
+    // std::streamsize fileSize = inFile.tellg();
+    // inFile.seekg(0);
 
-    std::string newData = blockString.getText(encrypted);
+    // std::string fileData(fileSize, '\0');
+    // inFile.read(fileData.data(), fileSize);
+    // inFile.close();
 
-    std::ofstream outFile(filePath, std::ios::binary);
+    // std::string password;
+    // std::cout << (encrypted ? "Decrypting" : "Encrypting") << " file, input password key: ";
+    // std::cin >> password;
 
-    if (!outFile) {
-        std::cerr << "Failed to write to file: " << filePath;
+    // Block<cols, rows> key = getKey(password);
+    // KeySchedule<cols, rows, rounds> keySchedule = KeySchedule<cols, rows, rounds>(key, subBox, roundConstants);
+    // BlockString<cols, rows> blockString = BlockString<cols, rows>(fileData, encrypted);
 
-        return 1;
-    }
+    // if (encrypted) blockString.cbcDecrypt(keySchedule, subBoxInv, mixColMatrixInv, ivBlock);
+    // else blockString.cbcEncrypt(keySchedule, subBox, mixColMatrix, ivBlock);
 
-    outFile.seekp(0);
-    outFile.write(newData.data(), newData.size());
-    outFile.close();
+    // std::string newData = blockString.getText(encrypted);
 
-    std::string newPath = encrypted ? filePath.substr(0, filePath.length() - 4) : filePath + ".enc";
+    // std::ofstream outFile(filePath, std::ios::binary);
 
-    if (std::rename(filePath.c_str(), newPath.c_str()) != 0) {
-        std::cerr << "Failed to rename file: " << filePath;
+    // if (!outFile) {
+    //     std::cerr << "Failed to write to file: " << filePath;
 
-        return 1;
-    }
+    //     return 1;
+    // }
 
-    return 0;
+    // outFile.seekp(0);
+    // outFile.write(newData.data(), newData.size());
+    // outFile.close();
+
+    // std::string newPath = encrypted ? filePath.substr(0, filePath.length() - 4) : filePath + ".enc";
+
+    // if (std::rename(filePath.c_str(), newPath.c_str()) != 0) {
+    //     std::cerr << "Failed to rename file: " << filePath;
+
+    //     return 1;
+    // }
+
+    // return 0;
 }

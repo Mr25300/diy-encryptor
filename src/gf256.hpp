@@ -4,29 +4,85 @@
 #include <string>
 #include <bitset>
 
+struct LongDivisionResult {
+    uint8_t quotient;
+    uint8_t remainder;
+};
+
 class GF256 {
     uint8_t value;
 
-    static constexpr uint8_t REDUCTION_POLYNOMIAL = 0b00011011;
+    static constexpr uint16_t REDUCTION_POLYNOMIAL = 0b100011011;
 
-    static constexpr uint8_t gfMultiply(uint8_t a, uint8_t b) { // Understand how this works
-        uint8_t result = 0;
-
-        for (int i = 0; i < 8; i++) {
-            // if (b == 0) break;
-            if (b & 1) result ^= a;
-
-            bool hasHighBit = a & 0b10000000;
-
-            a <<= 1;
-
-            if (hasHighBit) a ^= REDUCTION_POLYNOMIAL;
-
-            b >>= 1;
+    static constexpr int gfGetDegree(uint16_t n) {
+        if (n == 0) {
+            return -1;
+        } else if (n == REDUCTION_POLYNOMIAL) {
+            return 8;
         }
 
-        return result;
+        int d = 0;
+
+        for (d = 15; d >= 0; d--) {
+            if (n & (1 << d)) {
+                return d;
+            }
+        }
+
+        return d;
     }
+
+    static constexpr LongDivisionResult gfLongDivide(uint16_t dividend, uint16_t divisor) {
+        if (divisor == 0) {
+            return {0, 0};
+        }
+
+        int dividendDeg = gfGetDegree(dividend);
+        const int divisorDeg = gfGetDegree(divisor);
+
+        uint8_t quotient = 0;
+
+        while (dividendDeg >= divisorDeg) {
+            int degDiff = dividendDeg - divisorDeg;
+
+            dividend ^= divisor << degDiff;
+            quotient ^= 1 << degDiff;
+
+            dividendDeg = gfGetDegree(dividend);
+        }
+
+        return {quotient, static_cast<uint8_t>(dividend)};
+    }
+
+    static constexpr uint8_t gfMultiply(uint16_t multiplier, uint8_t multiplicand) {
+        uint16_t product = 0;
+
+        for (int i = 0; i < 8; i++) {
+            if (multiplicand & (1 << i)) {
+                product ^= multiplier << i;
+            }
+        }
+
+        return gfLongDivide(product, REDUCTION_POLYNOMIAL).remainder;
+    }
+
+    // static constexpr uint8_t gfMultiply(uint16_t a, uint8_t b) {
+    //     uint8_t result = 0;
+
+    //     for (int i = 0; i < 8; i++) {
+    //         if (b & 1) result ^= a;
+
+    //         bool hasHighBit = a & 0b10000000;
+
+    //         a <<= 1;
+
+    //         if (hasHighBit) a ^= REDUCTION_POLYNOMIAL;
+
+    //         b >>= 1;
+    //     }
+
+    //     return result;
+    // }
 
     static constexpr char hexDigits[] = "0123456789ABCDEF";
 
@@ -42,7 +98,26 @@ public:
     }
 
     constexpr GF256 inv() const {
-        return *this; // Use extended euclidean algorithm
+        if (value == 0) throw std::invalid_argument("Zero has no inverse");
+
+        uint16_t prevRemainder = REDUCTION_POLYNOMIAL; // r0
+        uint8_t remainder = value; // r1
+        uint8_t prevCoeff = 0; // n_0, where m_0 * a + n_0 * b = r_0 (a = value, b = irreducible polynomial)
+        uint8_t coeff = 1; // n_1, where m_1 * a + n_1 * b = r_1 (a = value, b = irreducible polynomial)
+
+        while (remainder != 0) {
+            LongDivisionResult result = gfLongDivide(prevRemainder, remainder);
+            uint8_t newCoeff = prevCoeff ^ gfMultiply(coeff, result.quotient);
+
+            // (r0, r1) = (r1, r0 % r1)
+            prevRemainder = remainder; // r0 = r1
+            remainder = result.remainder; // r1 = r0 % r1 = r0 - r1 * floor(r0 / r1)
+
+            prevCoeff = coeff; // c0 = c1
+            coeff = newCoeff; // c1 = c0 - c1 * floor(r0 / r1)
+        }
+
+        return prevCoeff; // n_0, where m_0 * a + n_0 * b = 1 --> gcd(a, b)
     }
 
     constexpr GF256 operator+(GF256 other) const {
@@ -75,9 +150,15 @@ public:
         return *this;
     }
 
-    // constexpr GF256 operator/(GF256 other) const;
+    constexpr GF256 operator/(GF256 other) const {
+        return *this * other.inv();
+    }
 
-    // constexpr void operator/=(GF256 other);
+    constexpr GF256& operator/=(GF256 other) {
+        *this *= other.inv();
+
+        return *this;
+    }
 
     std::string asHex() const {
         return {'0', 'x', hexDigits[value >> 4], hexDigits[value & 0b1111]};
