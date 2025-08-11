@@ -6,11 +6,11 @@
 #include <vector>
 
 #include "gf256.hpp"
-#include "word.hpp"
+#include "vector.hpp"
 #include "matrix.hpp"
 #include "block.hpp"
-#include "keyschedule.hpp"
-#include "blockstring.hpp"
+#include "block_string.hpp"
+#include "key_schedule.hpp"
 
 constexpr size_t cols = 4;
 constexpr size_t rows = 4;
@@ -58,14 +58,14 @@ constexpr std::array<GF256, 256> subBoxInv = []() constexpr {
     return inverseMap;
 }();
 
-constexpr Matrix<4> mixColMatrix = Matrix<4>::createMaxDiffusion(Word<4>({2, 3, 1, 1}));
+constexpr Matrix<4> mixColMatrix = Matrix<4>::createMaxDiffusion(Vector<4>({2, 3, 1, 1}));
 constexpr Matrix<4> mixColMatrixInv = mixColMatrix.inverse();
 
 const Block<cols, rows> ivBlock = Block<cols, rows>({
-    Word<rows>({0x01, 0x23, 0x45, 0x67}),
-    Word<rows>({0x89, 0xAB, 0xCD, 0xEF}),
-    Word<rows>({0xFE, 0xDC, 0xBA, 0x98}),
-    Word<rows>({0x76, 0x54, 0x32, 0x10})
+    Vector<rows>({0x01, 0x23, 0x45, 0x67}),
+    Vector<rows>({0x89, 0xAB, 0xCD, 0xEF}),
+    Vector<rows>({0xFE, 0xDC, 0xBA, 0x98}),
+    Vector<rows>({0x76, 0x54, 0x32, 0x10})
 });
 
 Block<cols, rows> getKey(std::string password) { // Change this to static constructor in block class
@@ -79,6 +79,8 @@ Block<cols, rows> getKey(std::string password) { // Change this to static constr
 }
 
 int main(int argc, char *argv[]) {
+    std::cout << mixColMatrix.toString(GFFormat::Poly) << "\n";
+
     if (argc != 2) {
         std::cerr << "Error";
 

@@ -3,10 +3,19 @@
 #include <cstdint>
 #include <string>
 #include <bitset>
+#include <sstream>
 
 struct LongDivisionResult {
     uint8_t quotient;
     uint8_t remainder;
+};
+
+enum class GFFormat {
+    Hex,
+    Binary,
+    Char,
+    Int,
+    Poly
 };
 
 class GF256 {
@@ -160,41 +169,87 @@ public:
         return *this;
     }
 
-    std::string asHex() const {
-        return {'0', 'x', hexDigits[value >> 4], hexDigits[value & 0b1111]};
-    }
+    std::string toString(GFFormat format = GFFormat::Poly) const {
+        std::ostringstream oss;
 
-    std::string asBinary() const {
-        return "0b" + std::bitset<8>(value).to_string();
-    }
+        switch(format) {
+            case GFFormat::Hex: {
+                oss << "0x" << hexDigits[value >> 4] << hexDigits[value & 0b1111];
 
-    std::string asPoly() const {
-        std::string result = "";
-
-        for (int i = 7; i >= 0; i--) {
-            if (value & (1 << i)) {
-                if (result.size() > 0) {
-                    result += " + ";
-                }
-
-                if (i == 0) {
-                    result += "1";
-                } else if (i == 1) {
-                    result += "x";
-                } else {
-                    result += "x^" + std::to_string(i);
-                }
+                break;
             }
+            case GFFormat::Binary: {
+                oss << "0b" << std::bitset<8>(value).to_string();
+
+                break;
+            }
+            case GFFormat::Char: {
+                oss << static_cast<char>(value);
+
+                break;
+            }
+            case GFFormat::Int: {
+                oss << std::to_string(value);
+
+                break;
+            }
+            case GFFormat::Poly: {
+                bool firstPlaced = false;
+
+                for (int i = 7; i >= 0; i--) {
+                    if (value & (1 << i)) {
+                        if (firstPlaced) {
+                            oss << " + ";
+                        }
+
+                        firstPlaced = true;
+
+                        if (i == 0) {
+                            oss << "1";
+                        } else if (i == 1) {
+                            oss << "x";
+                        } else {
+                            oss << "x^" << std::to_string(i);
+                        }
+                    }
+                }
+
+                break;
+            }
+            default:
+                throw std::invalid_argument("Unknown format enum value");
+                
+            // case GFFormat::Binary:
+            //     return "0b" + std::bitset<8>(value).to_string();
+            // case GFFormat::Char:
+            //     return {static_cast<char>(value)};
+            // case GFFormat::Int:
+            //     return std::to_string(value);
+            // case GFFormat::Poly: {
+            //     std::string result;
+
+            //     for (int i = 7; i >= 0; i--) {
+            //         if (value & (1 << i)) {
+            //             if (result.size() > 0) {
+            //                 result += " + ";
+            //             }
+
+            //             if (i == 0) {
+            //                 result += "1";
+            //             } else if (i == 1) {
+            //                 result += "x";
+            //             } else {
+            //                 result += "x^" + std::to_string(i);
+            //             }
+            //         }
+            //     }
+
+            //     return result;
+            // }
+            // default:
+            //     throw std::invalid_argument("Unknown format enum value");
         }
 
-        return result;
-    }
-
-    std::string asChar() const {
-        return {static_cast<char>(value)};
-    }
-
-    std::string asInt() const {
-        return std::to_string(value);
+        return oss.str();
     }
 };

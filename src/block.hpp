@@ -2,26 +2,26 @@
 
 #include <string>
 
-#include "word.hpp"
+#include "vector.hpp"
+#include "key_schedule.hpp"
 #include "util.hpp"
-#include "keyschedule.hpp"
 
 template <size_t cols, size_t rows, size_t rounds>
 class KeySchedule;
 
 template <size_t cols, size_t rows>
 class Block {
-    std::array<Word<rows>, cols> words;
+    std::array<Vector<rows>, cols> words;
 
 public:
     Block() : words{} {}
-    Block(std::array<Word<rows>, cols> values) : words(values) {}
+    Block(std::array<Vector<rows>, cols> values) : words(values) {}
 
-    const Word<rows>& operator[](uint8_t index) const {
+    const Vector<rows>& operator[](uint8_t index) const {
         return words[index];
     }
 
-    Word<rows>& operator[](uint8_t index) {
+    Vector<rows>& operator[](uint8_t index) {
         return words[index];
     }
 
@@ -38,7 +38,7 @@ public:
     }
 
     void shiftRows(bool invDir = false) {
-        std::array<Word<rows>, cols> tempValues = words;
+        std::array<Vector<rows>, cols> tempValues = words;
 
         int direction = invDir ? -1 : 1;
 

@@ -1,15 +1,16 @@
 #pragma once
 
 #include <string>
+#include <sstream>
 
-#include "word.hpp"
+#include "vector.hpp"
 
 template <size_t size>
 class Matrix {
-    std::array<Word<size>, size> rows;
+    std::array<Vector<size>, size> rows;
 
-    Word<size> matMultiply(const Word<size>& word) const {
-        Word<size> newWord = word;
+    Vector<size> matMultiply(const Vector<size>& word) const {
+        Vector<size> newWord = word;
 
         for (int i = 0; i < size; i++) {
             newWord[i] = rows[i] * word; // Dot each row with word vector to get resulting vector at the same row
@@ -20,11 +21,11 @@ class Matrix {
 
 public:
     constexpr Matrix() : rows{} {}
-    constexpr Matrix(std::array<Word<size>, size> values) : rows(values) {}
+    constexpr Matrix(std::array<Vector<size>, size> values) : rows(values) {}
 
-    static constexpr Matrix<size> createMaxDiffusion(const Word<size>& initRow) {
-        Word<size> tempRow = initRow;
-        std::array<Word<size>, size> vals;
+    static constexpr Matrix<size> createMaxDiffusion(const Vector<size>& initRow) {
+        Vector<size> tempRow = initRow;
+        std::array<Vector<size>, size> vals;
 
         for (int i = 0; i < size; i++) {
             vals[i] = tempRow;
@@ -34,11 +35,11 @@ public:
         return Matrix<size>(vals);
     }
 
-    constexpr const Word<size>& operator[](uint8_t index) const {
+    constexpr const Vector<size>& operator[](uint8_t index) const {
         return rows[index];
     }
 
-    constexpr Word<size>& operator[](uint8_t index) {
+    constexpr Vector<size>& operator[](uint8_t index) {
         return rows[index];
     }
 
@@ -123,29 +124,50 @@ public:
         return *this;
     }
 
-    constexpr Word<size> operator*(const Word<size>& word) const {
+    constexpr Vector<size> operator*(const Vector<size>& word) const {
         return matMultiply(word);
     }
 
-    constexpr friend Word<size> operator*(const Word<size>& word, const Matrix<size>& mat) {
+    constexpr friend Vector<size> operator*(const Vector<size>& word, const Matrix<size>& mat) {
         return mat * word;
     }
 
-    constexpr friend Word<size>& operator*=(Word<size>& word, const Matrix<size>& mat) {
+    constexpr friend Vector<size>& operator*=(Vector<size>& word, const Matrix<size>& mat) {
         word = mat * word;
 
         return word;
     }
 
-    std::string asString() const {
-        std::string result;
+    std::string toString(GFFormat format = GFFormat::Int) const {
+        std::ostringstream oss;
 
         for (int i = 0; i < size; i++) {
-            if (i > 0) result += "\n";
+            if (i > 0) oss << '\n';
 
-            result += rows[i].asVec();
+            char leftBorder, rightBorder;
+
+            switch (i) {
+                case 0: {
+                    leftBorder = '/';
+                    rightBorder = '\\';
+
+                    break;
+                }
+                case size - 1: {
+                    leftBorder = '\\';
+                    rightBorder = '/';
+
+                    break;
+                }
+                default:
+                    leftBorder = rightBorder = '|';
+
+                    break;
+            }
+
+            oss << leftBorder << ' ' << rows[i].toString(format, true) << ' ' << rightBorder;
         }
 
-        return result;
+        return oss.str();
     }
 };
