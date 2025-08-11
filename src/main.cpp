@@ -79,8 +79,6 @@ Block<cols, rows> getKey(std::string password) { // Change this to static constr
 }
 
 int main(int argc, char *argv[]) {
-    std::cout << mixColMatrix.toString(GFFormat::Poly) << "\n";
-
     if (argc != 2) {
         std::cerr << "Error";
 
