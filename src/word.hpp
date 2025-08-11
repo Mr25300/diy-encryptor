@@ -11,11 +11,11 @@ public:
     constexpr Word() : bytes{} {}
     constexpr Word(std::array<GF256, len> values) : bytes(values) {}
 
-    const GF256& operator[](uint8_t index) const {
+    constexpr const GF256& operator[](uint8_t index) const {
         return bytes[index];
     }
 
-    GF256& operator[](uint8_t index) {
+    constexpr GF256& operator[](uint8_t index) {
         return bytes[index];
     }
 
@@ -70,11 +70,25 @@ public:
     }
 
     std::string asString() {
-        std::string result = "";
+        std::string result;
 
         for (int i = 0; i < len; i++) {
             result += bytes[i].asChar();
         }
+
+        return result;
+    }
+
+    std::string asVec() const {
+        std::string result = "[";
+
+        for (int i = 0; i < len; i++) {
+            if (i > 0) result += ", ";
+
+            result += bytes[i].asInt();
+        }
+
+        result += "]";
 
         return result;
     }

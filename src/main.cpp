@@ -59,22 +59,14 @@ constexpr std::array<GF256, 256> subBoxInv = []() constexpr {
 }();
 
 constexpr Matrix<4> mixColMatrix = Matrix<4>::createMaxDiffusion(Word<4>({2, 3, 1, 1}));
+constexpr Matrix<4> mixColMatrixInv = mixColMatrix.inverse();
 
-constexpr Matrix<4> mixColMatrixInv = Matrix<4>({
-    Word<4>({14, 11, 13, 9}),
-    Word<4>({9, 14, 11, 13}),
-    Word<4>({13, 9, 14, 11}),
-    Word<4>({11, 13, 9, 14})
+const Block<cols, rows> ivBlock = Block<cols, rows>({
+    Word<rows>({0x01, 0x23, 0x45, 0x67}),
+    Word<rows>({0x89, 0xAB, 0xCD, 0xEF}),
+    Word<rows>({0xFE, 0xDC, 0xBA, 0x98}),
+    Word<rows>({0x76, 0x54, 0x32, 0x10})
 });
-
-// const Block<cols, rows> ivBlock = Block<cols, rows>({
-//     Word<rows>({0x01, 0x23, 0x45, 0x67}),
-//     Word<rows>({0x89, 0xAB, 0xCD, 0xEF}),
-//     Word<rows>({0xFE, 0xDC, 0xBA, 0x98}),
-//     Word<rows>({0x76, 0x54, 0x32, 0x10})
-// });
-
-const Block<cols, rows> ivBlock{};
 
 Block<cols, rows> getKey(std::string password) { // Change this to static constructor in block class
     Block<cols, rows> key;

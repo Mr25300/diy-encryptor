@@ -12,12 +12,12 @@ struct LongDivisionResult {
 class GF256 {
     uint8_t value;
 
-    static constexpr uint16_t REDUCTION_POLYNOMIAL = 0b100011011;
+    static constexpr uint16_t irreduciblePolynomial = 0b100011011;
 
     static constexpr int gfGetDegree(uint16_t n) {
         if (n == 0) {
             return -1;
-        } else if (n == REDUCTION_POLYNOMIAL) {
+        } else if (n == irreduciblePolynomial) {
             return 8;
         }
 
@@ -63,7 +63,7 @@ class GF256 {
             }
         }
 
-        return gfLongDivide(product, REDUCTION_POLYNOMIAL).remainder;
+        return gfLongDivide(product, irreduciblePolynomial).remainder;
     }
 
     // static constexpr uint8_t gfMultiply(uint16_t a, uint8_t b) {
@@ -76,7 +76,7 @@ class GF256 {
 
     //         a <<= 1;
 
-    //         if (hasHighBit) a ^= REDUCTION_POLYNOMIAL;
+    //         if (hasHighBit) a ^= irreduciblePolynomial;
 
     //         b >>= 1;
     //     }
@@ -97,10 +97,10 @@ public:
         return *this;
     }
 
-    constexpr GF256 inv() const {
+    constexpr GF256 inv() const { // Utilizes euclidean algorithm while keeping track of coefficients and ensuring that the Bezout identity is satisfied for the remainder at each step
         if (value == 0) throw std::invalid_argument("Zero has no inverse");
 
-        uint16_t prevRemainder = REDUCTION_POLYNOMIAL; // r0
+        uint16_t prevRemainder = irreduciblePolynomial; // r0
         uint8_t remainder = value; // r1
         uint8_t prevCoeff = 0; // n_0, where m_0 * a + n_0 * b = r_0 (a = value, b = irreducible polynomial)
         uint8_t coeff = 1; // n_1, where m_1 * a + n_1 * b = r_1 (a = value, b = irreducible polynomial)
@@ -192,5 +192,9 @@ public:
 
     std::string asChar() const {
         return {static_cast<char>(value)};
+    }
+
+    std::string asInt() const {
+        return std::to_string(value);
     }
 };
