@@ -23,7 +23,7 @@ public:
     constexpr Matrix() : rows{} {}
     constexpr Matrix(std::array<Vector<size>, size> values) : rows(values) {}
 
-    static constexpr Matrix<size> createMaxDiffusion(const Vector<size>& initRow) {
+    static constexpr Matrix<size> createCirculantMatrix(const Vector<size>& initRow) {
         Vector<size> tempRow = initRow;
         std::array<Vector<size>, size> vals;
 
@@ -43,29 +43,31 @@ public:
         return rows[index];
     }
 
-    constexpr Matrix<size - 1> minor(int delRow, int delCol) const {
-        Matrix<size - 1> minor{};
+    constexpr Matrix<size - 1> matrixMinor(int delRow, int delCol) const {
+        Matrix<size - 1> matrix{};
 
         for (int r = 0; r < size - 1; r++) {
             int row = r < delRow ? r : r + 1;
 
             for (int c = 0; c < size - 1; c++) {
-                minor[r][c] = rows[row][c < delCol ? c : c + 1];
+                matrix[r][c] = rows[row][c < delCol ? c : c + 1];
             }
         }
 
-        return minor;
+        return matrix;
     }
 
-    constexpr GF256 determinant() const {
-        if constexpr (size == 2) {
-            return rows[0][0] * rows[1][1] - rows[0][1] * rows[1][0];
+    constexpr GF256 determinant() const { // Laplace expansion
+        if constexpr (size == 1) {
+            return rows[0][0];
 
         } else {
             GF256 sum = 0;
 
             for (int c = 0; c < size; c++) {
-                sum += rows[0][c] * minor(0, c).determinant(); // Ignore cofactor sign since negation is equivalent to identity operator in gf(2^8)
+                GF256 minor = matrixMinor(0, c).determinant();
+
+                sum += rows[0][c] * minor; // Ignore cofactor sign since negation is equivalent to identity operator in gf(2^8)
             }
 
             return sum;
@@ -89,7 +91,7 @@ public:
 
         for (int r = 0; r < size; r++) {
             for (int c = 0; c < size; c++) {
-                Matrix<size - 1> min = minor(r, c); 
+                Matrix<size - 1> min = matrixMinor(r, c); 
 
                 cofactors[r][c] = min.determinant(); // Ignore cofactor sign since negation is equivalent to identity operator in gf(2^8)
             }
@@ -137,6 +139,10 @@ public:
 
         return word;
     }
+
+    // constexpr Matrix<size> operator*(const Matrix<size>& matrix) const {
+
+    // }
 
     std::string toString(GFFormat format = GFFormat::Int) const {
         std::ostringstream oss;

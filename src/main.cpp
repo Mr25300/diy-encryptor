@@ -58,8 +58,8 @@ constexpr std::array<GF256, 256> subBoxInv = []() constexpr {
     return inverseMap;
 }();
 
-constexpr Matrix<4> mixColMatrix = Matrix<4>::createMaxDiffusion(Vector<4>({2, 3, 1, 1}));
-constexpr Matrix<4> mixColMatrixInv = mixColMatrix.inverse();
+constexpr Matrix<rows> mixColMatrix = Matrix<rows>::createCirculantMatrix(Vector<rows>({2, 3, 1, 1}));
+constexpr Matrix<rows> mixColMatrixInv = mixColMatrix.inverse();
 
 const Block<cols, rows> ivBlock = Block<cols, rows>({
     Vector<rows>({0x01, 0x23, 0x45, 0x67}),

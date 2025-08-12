@@ -67,9 +67,11 @@ class GF256 {
         uint16_t product = 0;
 
         for (int i = 0; i < 8; i++) {
-            if (multiplicand & (1 << i)) {
-                product ^= multiplier << i;
-            }
+            if (multiplicand == 0) break;
+            if (multiplicand & 1) product ^= multiplier;
+
+            multiplier <<= 1;
+            multiplicand >>= 1;
         }
 
         return gfLongDivide(product, irreduciblePolynomial).remainder;
