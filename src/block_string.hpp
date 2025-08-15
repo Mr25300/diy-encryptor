@@ -4,6 +4,7 @@
 #include <vector>
 #include <array>
 
+#include "substitution_box.hpp"
 #include "block.hpp"
 #include "matrix.hpp"
 
@@ -36,7 +37,7 @@ public:
     }
 
     template <size_t rounds>
-    void cbcEncrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const std::array<GF256, 256>& subBox, const Matrix<rows>& mixColMatrix, const Block<cols, rows>& ivBlock) {
+    void cbcEncrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const Matrix<rows>& mixColMatrix, const Block<cols, rows>& ivBlock) {
         Block<cols, rows> prevBlock = ivBlock;
 
         for (Block<cols, rows>& block : blocks) {
@@ -48,13 +49,13 @@ public:
     }
 
     template <size_t rounds>
-    void cbcDecrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const std::array<GF256, 256>& subBoxInv, const Matrix<rows>& mixColMatrixInv, const Block<cols, rows>& ivBlock) {
+    void cbcDecrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const Matrix<rows>& mixColMatrixInv, const Block<cols, rows>& ivBlock) {
         Block<cols, rows> prevBlock = ivBlock;
 
         for (Block<cols, rows>& block : blocks) {
             Block<cols, rows> cipherBlock = block;
 
-            block.decrypt(keySchedule, subBoxInv, mixColMatrixInv);
+            block.decrypt(keySchedule, subBox, mixColMatrixInv);
             block.addKey(prevBlock);
 
             prevBlock = cipherBlock;

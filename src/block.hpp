@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "substitution_box.hpp"
 #include "vector.hpp"
 #include "key_schedule.hpp"
 #include "util.hpp"
@@ -31,9 +32,9 @@ public:
         }
     }
 
-    void subBytes(std::array<GF256, 256> subBox) {
+    void subBytes(const SubstitutionBox& subBox, bool inverse = false) {
         for (int i = 0; i < cols; i++) {
-            words[i].subWord(subBox);
+            words[i].subWord(subBox, inverse);
         }
     }
 
@@ -58,7 +59,7 @@ public:
     }
 
     template <size_t rounds>
-    void encrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const std::array<GF256, 256>& subBox, const Matrix<rows>& mixColMatrix) {
+    void encrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const Matrix<rows>& mixColMatrix) {
         addKey(keySchedule.getRoundKey(0));
 
         for (int n = 1; n <= rounds; n++) {
@@ -74,7 +75,7 @@ public:
     }
 
     template <size_t rounds>
-    void decrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const std::array<GF256, 256>& subBoxInv, const Matrix<rows>& mixColMatrixInv) {
+    void decrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const Matrix<rows>& mixColMatrixInv) {
         for (int n = rounds; n >= 1; n--) {
             addKey(keySchedule.getRoundKey(n));
 
@@ -83,7 +84,7 @@ public:
             }
 
             shiftRows(true);
-            subBytes(subBoxInv);
+            subBytes(subBox, true);
         }
 
         addKey(keySchedule.getRoundKey(0));

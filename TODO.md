@@ -1,4 +1,3 @@
 - Optimize debug printing using ostringstream
-- Create algorithm to generate/check MDS matrix of any size for mix columns
-- Create algorithm for generating the substitution box
 - Optimize all classes, methods and ensure memory is managed properly
+- Reformat all code for maximum performance while maintaining readability

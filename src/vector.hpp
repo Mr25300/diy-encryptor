@@ -1,6 +1,7 @@
 #pragma once
 
 #include "gf256.hpp"
+#include "substitution_box.hpp"
 #include "util.hpp"
 
 template <size_t len>
@@ -59,9 +60,9 @@ public:
         }
     }
     
-    void subWord(const std::array<GF256, 256>& subBox) {
+    void subWord(const SubstitutionBox& subBox, bool inverse = false) {
         for (int i = 0; i < len; i++) {
-            values[i] = subBox[values[i].get()];
+            values[i] = inverse ? subBox.sub(values[i]) : subBox.subInv(values[i]);
         }
     }
 

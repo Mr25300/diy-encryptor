@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "substitution_box.hpp"
 #include "vector.hpp"
 #include "block.hpp"
 
@@ -18,7 +19,7 @@ class KeySchedule {
 
 public:
     template <size_t keyWordCount>
-    KeySchedule(const Block<keyWordCount, rows>& key, const std::array<GF256, 256>& subBox, const std::array<GF256, rounds>& roundConstants) {
+    KeySchedule(const Block<keyWordCount, rows>& key, const SubstitutionBox& subBox, const std::array<GF256, rounds>& roundConstants) {
         size_t totalWords = (rounds + 1) * cols;
         size_t currentWord = 0;
 

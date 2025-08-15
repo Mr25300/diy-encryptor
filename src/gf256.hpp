@@ -109,7 +109,7 @@ public:
     }
 
     constexpr GF256 inv() const { // Utilizes euclidean algorithm while keeping track of coefficients and ensuring that the Bezout identity is satisfied for the remainder at each step
-        if (value == 0) throw std::invalid_argument("Zero has no inverse");
+        if (value == 0) return 0;
 
         uint16_t prevRemainder = irreduciblePolynomial; // r0
         uint8_t remainder = value; // r1
