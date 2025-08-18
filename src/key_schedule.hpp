@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <ostream>
 
 #include "substitution_box.hpp"
 #include "vector.hpp"
@@ -44,5 +45,20 @@ public:
 
     const Block<cols, rows>& getRoundKey(size_t round) const {
         return roundKeys[round];
+    }
+
+    void print(std::ostream& stream, GFFormat format = GFFormat::Hex) const {
+        for (int r = 0; r < rounds; r++) {
+            if (r > 0) stream << '\n';
+
+            stream << "Round " << r << ":\n";
+            roundKeys[r].print(stream, format);
+        }
+    }
+
+    friend std::ostream& operator<<(std::ostream& stream, const KeySchedule<cols, rows, rounds>& keySchedule) {
+        keySchedule.print(stream);
+
+        return stream;
     }
 };

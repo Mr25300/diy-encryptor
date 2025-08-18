@@ -144,36 +144,15 @@ public:
 
     // }
 
-    std::string toString(GFFormat format = GFFormat::Int) const {
-        std::ostringstream oss;
-
+    friend std::ostream& operator<<(std::ostream& stream, const Matrix& matrix) {
         for (int i = 0; i < size; i++) {
-            if (i > 0) oss << '\n';
+            if (i > 0) stream << '\n';
 
-            char leftBorder, rightBorder;
-
-            switch (i) {
-                case 0: {
-                    leftBorder = '/';
-                    rightBorder = '\\';
-
-                    break;
-                }
-                case size - 1: {
-                    leftBorder = '\\';
-                    rightBorder = '/';
-
-                    break;
-                }
-                default:
-                    leftBorder = rightBorder = '|';
-
-                    break;
-            }
-
-            oss << leftBorder << ' ' << rows[i].toString(format, true) << ' ' << rightBorder;
+            stream << '[';
+            matrix.rows[i].print(stream, GFFormat::Int, true);
+            stream << ']';
         }
 
-        return oss.str();
+        return stream;
     }
 };

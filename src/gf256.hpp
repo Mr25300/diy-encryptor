@@ -3,7 +3,7 @@
 #include <cstdint>
 #include <string>
 #include <bitset>
-#include <sstream>
+#include <ostream>
 
 struct LongDivisionResult {
     uint8_t quotient;
@@ -172,27 +172,25 @@ public:
         return *this;
     }
 
-    std::string toString(GFFormat format = GFFormat::Poly) const {
-        std::ostringstream oss;
-
+    void print(std::ostream& stream, GFFormat format = GFFormat::Poly) const {
         switch(format) {
             case GFFormat::Hex: {
-                oss << "0x" << hexDigits[value >> 4] << hexDigits[value & 0b1111];
+                stream << "0x" << hexDigits[value >> 4] << hexDigits[value & 0b1111];
 
                 break;
             }
             case GFFormat::Binary: {
-                oss << "0b" << std::bitset<8>(value).to_string();
+                stream << "0b" << std::bitset<8>(value).to_string();
 
                 break;
             }
             case GFFormat::Char: {
-                oss << static_cast<char>(value);
+                stream << static_cast<char>(value);
 
                 break;
             }
             case GFFormat::Int: {
-                oss << std::to_string(value);
+                stream << std::to_string(value);
 
                 break;
             }
@@ -202,17 +200,17 @@ public:
                 for (int i = 7; i >= 0; i--) {
                     if (value & (1 << i)) {
                         if (firstPlaced) {
-                            oss << " + ";
+                            stream << " + ";
                         }
 
                         firstPlaced = true;
 
                         if (i == 0) {
-                            oss << "1";
+                            stream << "1";
                         } else if (i == 1) {
-                            oss << "x";
+                            stream << "x";
                         } else {
-                            oss << "x^" << std::to_string(i);
+                            stream << "x^" << std::to_string(i);
                         }
                     }
                 }
@@ -221,38 +219,12 @@ public:
             }
             default:
                 throw std::invalid_argument("Unknown format enum value");
-                
-            // case GFFormat::Binary:
-            //     return "0b" + std::bitset<8>(value).to_string();
-            // case GFFormat::Char:
-            //     return {static_cast<char>(value)};
-            // case GFFormat::Int:
-            //     return std::to_string(value);
-            // case GFFormat::Poly: {
-            //     std::string result;
-
-            //     for (int i = 7; i >= 0; i--) {
-            //         if (value & (1 << i)) {
-            //             if (result.size() > 0) {
-            //                 result += " + ";
-            //             }
-
-            //             if (i == 0) {
-            //                 result += "1";
-            //             } else if (i == 1) {
-            //                 result += "x";
-            //             } else {
-            //                 result += "x^" + std::to_string(i);
-            //             }
-            //         }
-            //     }
-
-            //     return result;
-            // }
-            // default:
-            //     throw std::invalid_argument("Unknown format enum value");
         }
+    }
 
-        return oss.str();
+    friend std::ostream& operator<<(std::ostream& stream, GF256 number) {
+        number.print(stream);
+
+        return stream;
     }
 };

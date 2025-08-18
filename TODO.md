@@ -1,4 +1,3 @@
-- Optimize debug printing using ostringstream
 - Optimize all classes, methods and ensure memory is managed properly
 - Reformat all code for maximum performance while maintaining readability
 - Add way to measure non-linearity with Hamming distance for SubBox

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <ostream>
+#include <random>
 
 #include "substitution_box.hpp"
 #include "vector.hpp"
@@ -17,6 +19,20 @@ class Block {
 public:
     Block() : words{} {}
     Block(std::array<Vector<rows>, cols> values) : words(values) {}
+
+    static Block<cols, rows> fromString(std::string str) {
+        size_t len = str.length();
+
+        Block<cols, rows> block;
+
+        for (int c = 0; c < cols; c++) {
+            for (int r = 0; r < rows; r++) {
+                block.words[c][r] = str[(c * rows + r) % len];
+            }
+        }
+
+        return block;
+    }
 
     const Vector<rows>& operator[](uint8_t index) const {
         return words[index];
@@ -90,23 +106,22 @@ public:
         addKey(keySchedule.getRoundKey(0));
     }
 
-    std::string asString() const {
-        std::string results = "";
-
+    void print(std::ostream& stream, GFFormat format = GFFormat::Hex) const {
         for (int r = 0; r < rows; r++) {
-            if (r > 0) {
-                results += "\n";
-            }
+            if (r > 0) stream << '\n';
 
             for (int c = 0; c < cols; c++) {
-                if (c > 0) {
-                    results += "|";
-                }
+                if (c == 0) stream << '|';
 
-                results += words[c][r].asChar();
-            }
+                words[c][r].print(stream, format);
+                stream << '|';
+            } 
         }
+    }
 
-        return results;
+    friend std::ostream& operator<<(std::ostream& stream, const Block<cols, rows>& block) {
+        block.print(stream);
+
+        return stream;
     }
 };

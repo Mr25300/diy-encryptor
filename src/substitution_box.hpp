@@ -2,7 +2,7 @@
 
 #include <array>
 #include <string>
-#include <sstream>
+#include <ostream>
 
 #include "gf256.hpp"
 
@@ -50,21 +50,21 @@ public:
         return mapInv[val.get()];
     }
 
-    std::string toString(GFFormat format = GFFormat::Hex) const {
-        std::ostringstream oss;
-
+    friend std::ostream& operator<<(std::ostream& stream, const SubstitutionBox& subBox) {
         for (int i = 0; i < 16; i++) {
-            if (i > 0) oss << '\n';
+            if (i > 0) stream << '\n';
 
             for (int j = 0; j < 16; j++) {
-                if (j > 0 || (j == 14 && i == 15)) oss << ", ";
+                GF256 outputByte = subBox.map[(i << 4) ^ j];
 
-                GF256 outputByte = map[(i << 4) ^ j];
+                outputByte.print(stream, GFFormat::Hex);
 
-                oss << outputByte.toString(format);
+                if (i != 15 || j != 15) {
+                    stream << ',' << ' ';
+                }
             }
         }
 
-        return oss.str();
+        return stream;
     }
 };
