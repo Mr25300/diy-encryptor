@@ -143,11 +143,11 @@ public:
     }
 
     constexpr GF256 operator-(GF256 other) const {
-        return *this + other;
+        return GF256(value ^ other.value);
     }
 
     constexpr GF256& operator-=(GF256 other) {
-        *this += other;
+        value ^= other.value;
 
         return *this;
     }
@@ -170,6 +170,14 @@ public:
         *this *= other.inv();
 
         return *this;
+    }
+
+    constexpr bool operator==(GF256 other) {
+        return value == other.value;
+    }
+
+    constexpr bool operator!=(GF256 other) {
+        return value != other.value;
     }
 
     void print(std::ostream& stream, GFFormat format = GFFormat::Poly) const {
@@ -197,6 +205,12 @@ public:
             case GFFormat::Poly: {
                 bool firstPlaced = false;
 
+                if (value == 0) {
+                    stream << '0';
+
+                    break;
+                }
+
                 for (int i = 7; i >= 0; i--) {
                     if (value & (1 << i)) {
                         if (firstPlaced) {
@@ -206,9 +220,9 @@ public:
                         firstPlaced = true;
 
                         if (i == 0) {
-                            stream << "1";
+                            stream << '1';
                         } else if (i == 1) {
-                            stream << "x";
+                            stream << 'x';
                         } else {
                             stream << "x^" << std::to_string(i);
                         }

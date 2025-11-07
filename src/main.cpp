@@ -98,6 +98,10 @@ void deleteFile(std::string filePath) {
 }
 
 int main(int argc, char *argv[]) {
+    if (mixColMatrixInv.isSingular()) {
+        throw std::runtime_error("Mix columns matrix is singular, no inverse exists.");
+    }
+
     if (argc != 2) {
         std::cerr << "Error";
 

@@ -8,12 +8,13 @@
 template <size_t size>
 class Matrix {
     std::array<Vector<size>, size> rows;
+    bool singular;
 
     Vector<size> matMultiply(const Vector<size>& word) const {
         Vector<size> newWord = word;
 
         for (int i = 0; i < size; i++) {
-            newWord[i] = rows[i] * word; // Dot each row with word vector to get resulting vector at the same row
+            newWord[i] = rows[i] * word;
         }
 
         return newWord;
@@ -21,18 +22,30 @@ class Matrix {
 
 public:
     constexpr Matrix() : rows{} {}
-    constexpr Matrix(std::array<Vector<size>, size> values) : rows(values) {}
+    constexpr Matrix(std::array<Vector<size>, size> values) : rows(values), singular(false) {}
+
+    static constexpr Matrix<size> createIdentityMatrix() {
+        std::array<Vector<size>, size> values;
+
+        for (int i = 0; i < size; i++) {
+            for (int j = 0; j < size; j++) {
+                values[i][j] = i == j ? 1 : 0;
+            }
+        }
+
+        return Matrix<size>(values);
+    }
 
     static constexpr Matrix<size> createCirculantMatrix(const Vector<size>& initRow) {
         Vector<size> tempRow = initRow;
-        std::array<Vector<size>, size> vals;
+        std::array<Vector<size>, size> values;
 
         for (int i = 0; i < size; i++) {
-            vals[i] = tempRow;
+            values[i] = tempRow;
             tempRow.rotWord(true);
         }
 
-        return Matrix<size>(vals);
+        return Matrix<size>(values);
     }
 
     constexpr const Vector<size>& operator[](uint8_t index) const {
@@ -41,67 +54,6 @@ public:
 
     constexpr Vector<size>& operator[](uint8_t index) {
         return rows[index];
-    }
-
-    constexpr Matrix<size - 1> matrixMinor(int delRow, int delCol) const {
-        Matrix<size - 1> matrix{};
-
-        for (int r = 0; r < size - 1; r++) {
-            int row = r < delRow ? r : r + 1;
-
-            for (int c = 0; c < size - 1; c++) {
-                matrix[r][c] = rows[row][c < delCol ? c : c + 1];
-            }
-        }
-
-        return matrix;
-    }
-
-    constexpr GF256 determinant() const { // Laplace expansion
-        if constexpr (size == 1) {
-            return rows[0][0];
-
-        } else {
-            GF256 sum = 0;
-
-            for (int c = 0; c < size; c++) {
-                GF256 minor = matrixMinor(0, c).determinant();
-
-                sum += rows[0][c] * minor; // Ignore cofactor sign since negation is equivalent to identity operator in gf(2^8)
-            }
-
-            return sum;
-        }
-    }
-
-    constexpr Matrix<size> transpose() const {
-        Matrix<size> result{};
-
-        for (int r = 0; r < size; r++) {
-            for (int c = 0; c < size; c++) {
-                result[r][c] = rows[c][r];
-            }
-        }
-
-        return result;
-    }
-
-    constexpr Matrix<size> adjugate() const {
-        Matrix<size> cofactors{};
-
-        for (int r = 0; r < size; r++) {
-            for (int c = 0; c < size; c++) {
-                Matrix<size - 1> min = matrixMinor(r, c); 
-
-                cofactors[r][c] = min.determinant(); // Ignore cofactor sign since negation is equivalent to identity operator in gf(2^8)
-            }
-        }
-
-        return cofactors.transpose();
-    }
-
-    constexpr Matrix<size> inverse() const {
-        return this->adjugate() * this->determinant().inv();
     }
 
     constexpr Matrix<size> operator*(GF256 scalar) const {
@@ -140,9 +92,84 @@ public:
         return word;
     }
 
-    // constexpr Matrix<size> operator*(const Matrix<size>& matrix) const {
+    constexpr Matrix<size> operator*(const Matrix<size>& matrix) const {
+        std::array<Vector<size>, size> values;
 
-    // }
+        for (int r = 0; r < size; r++) {
+            for (int c = 0; c < size; c++) {
+                GF256 sum = 0;
+
+                for (int i = 0; i < size; i++) {
+                    sum += rows[r][i] * matrix.rows[i][c];
+                }
+
+                values[r][c] = sum;
+            }
+        }
+
+        return Matrix<size>(values);
+    }
+
+    constexpr Matrix<size> inverse() const {
+        Matrix<size> A = *this;
+        Matrix<size> I = Matrix<size>::createIdentityMatrix();
+
+        int currentPivotRow = 0;
+
+        for (int pivotCol = 0; pivotCol < size; pivotCol++) {
+            for (int rowInd = currentPivotRow; rowInd < size; rowInd++) {
+                GF256 pivot = A.rows[rowInd][pivotCol];
+
+                if (pivot != 0) {
+                    if (rowInd != currentPivotRow) {
+                        Vector<size> tempRow = A.rows[rowInd];
+                        Vector<size> invTempRow = I.rows[rowInd];
+
+                        A.rows[rowInd] = A.rows[currentPivotRow];
+                        A.rows[currentPivotRow] = tempRow;
+
+                        I.rows[rowInd] = I.rows[currentPivotRow];
+                        I.rows[currentPivotRow] = invTempRow;
+                    }
+
+                    Vector<size>& invPivotRow = I.rows[currentPivotRow];
+                    Vector<size>& pivotRow = A.rows[currentPivotRow];
+
+                    pivotRow /= pivot;
+                    invPivotRow /= pivot;
+
+                    for (int i = 0; i < size; i++) {
+                        if (i == currentPivotRow) continue;
+
+                        Vector<size>& otherRow = A.rows[i];
+                        Vector<size>& invOtherRow = I.rows[i];
+
+                        GF256 factor = otherRow[pivotCol];
+
+                        if (factor == 0) continue;
+
+                        otherRow -= pivotRow * factor;
+                        invOtherRow -= invPivotRow * factor;
+                    }
+
+                    currentPivotRow += 1;
+
+                    break;
+                }
+            }
+        }
+
+        if (currentPivotRow < size) {
+            A.singular = true;
+            I.singular = true;
+        }
+
+        return I;
+    }
+
+    constexpr bool isSingular() const {
+        return this->singular;
+    }
 
     friend std::ostream& operator<<(std::ostream& stream, const Matrix& matrix) {
         for (int i = 0; i < size; i++) {

@@ -22,7 +22,7 @@ public:
         return values[index];
     }
 
-    Vector operator+(const Vector& other) const {
+    constexpr Vector operator+(const Vector& other) const {
         std::array<GF256, size> newValues;
 
         for (int i = 0; i < size; i++) {
@@ -32,7 +32,7 @@ public:
         return Vector(newValues);
     }
 
-    Vector& operator+=(const Vector& other) {
+    constexpr Vector& operator+=(const Vector& other) {
         for (int i = 0; i < size; i++) {
             values[i] += other.values[i];
         }
@@ -40,7 +40,61 @@ public:
         return *this;
     }
 
-    GF256 operator*(const Vector& other) const {
+    constexpr Vector operator-(const Vector& other) const {
+        std::array<GF256, size> newValues;
+
+        for (int i = 0; i < size; i++) {
+            newValues[i] = values[i] - other.values[i];
+        }
+
+        return Vector(newValues);
+    }
+
+    constexpr Vector& operator-=(const Vector& other) {
+        for (int i = 0; i < size; i++) {
+            values[i] -= other.values[i];
+        }
+
+        return *this;
+    }
+
+    constexpr Vector operator*(GF256 scalar) const {
+        std::array<GF256, size> newValues;
+
+        for (int i = 0; i < size; i++) {
+            newValues[i] = values[i] * scalar;
+        }
+
+        return Vector(newValues);
+    }
+
+    constexpr Vector& operator*=(GF256 scalar) {
+        for (int i = 0; i < size; i++) {
+            values[i] *= scalar;
+        }
+
+        return *this;
+    }
+
+    constexpr Vector operator/(GF256 scalar) const {
+        std::array<GF256, size> newValues;
+
+        for (int i = 0; i < size; i++) {
+            newValues[i] = values[i] / scalar;
+        }
+
+        return Vector(newValues);
+    }
+
+    constexpr Vector& operator/=(GF256 scalar) {
+        for (int i = 0; i < size; i++) {
+            values[i] /= scalar;
+        }
+
+        return *this;
+    }
+
+    constexpr GF256 operator*(const Vector& other) const {
         GF256 sum = 0;
 
         for (int i = 0; i < size; i++) {
