@@ -6,6 +6,7 @@
 #include <vector>
 #include <ostream>
 
+#include "pbkdf2.hpp"
 #include "gf256.hpp"
 #include "vector.hpp"
 #include "matrix.hpp"
@@ -22,6 +23,8 @@ constexpr size_t keyWordCount = 4; // 4, 6, 8
 constexpr size_t keySize = keyWordCount * rows;
 
 constexpr size_t rounds = 10; // 10, 12, 14
+
+constexpr size_t iterations = 1000;
 
 constexpr std::array<GF256, rounds> roundConstants = []() constexpr {
     std::array<GF256, rounds> constants{};
@@ -40,8 +43,11 @@ constexpr SubstitutionBox subBox;
 constexpr Matrix<rows> mixColMatrix = Matrix<rows>::createCirculantMatrix(Vector<rows>({2, 3, 1, 1}));
 constexpr Matrix<rows> mixColMatrixInv = mixColMatrix.inverse();
 
+constexpr SHA256 sha;
+
 const std::string encryptedExtension = ".enc";
-const std::string ivExtension = ".iv";
+const std::string decryptedExtension = ".dec";
+const std::string metadataExtension = ".enc.meta"; // Change to ".enc.meta" for storing salt from PBKDF2
 
 std::string generateIV(size_t length) {
     std::mt19937 gen(std::random_device{}());
@@ -56,11 +62,11 @@ std::string generateIV(size_t length) {
     return iv;
 }
 
-std::string readFile(std::string filePath) {
+std::string readFile(const std::filesystem::path& filePath) {
     std::ifstream inFile(filePath, std::ios::binary | std::ios::ate);
 
     if (!inFile) {
-        throw std::ios_base::failure("Failed to read from file: " + filePath);
+        throw std::ios_base::failure("Failed to read from file: " + filePath.string());
     }
 
     std::streamsize fileSize = inFile.tellg();
@@ -73,11 +79,11 @@ std::string readFile(std::string filePath) {
     return fileData;
 }
 
-void writeToFile(std::string filePath, std::string data) {
+void writeToFile(const std::filesystem::path& filePath, const std::string& data) {
     std::ofstream outFile(filePath, std::ios::binary);
 
     if (!outFile) {
-        throw std::ios_base::failure("Failed to write to file: " + filePath);
+        throw std::ios_base::failure("Failed to write to file: " + filePath.string());
     }
 
     outFile.seekp(0);
@@ -85,66 +91,111 @@ void writeToFile(std::string filePath, std::string data) {
     outFile.close();
 }
 
-void renameFile(std::string filePath, std::string newPath) {
-    if (std::rename(filePath.c_str(), newPath.c_str()) != 0) {
-        throw std::runtime_error("Failed to rename file: " + filePath);
+void deleteFile(const std::filesystem::path& filePath) {
+    if (!std::filesystem::remove(filePath)) {
+        std::cerr << "Failed to delete file: " + filePath.string();
     }
 }
 
-void deleteFile(std::string filePath) {
-    if (std::remove(filePath.c_str()) != 0) {
-        throw std::runtime_error("Failed to delete file: " + filePath);
-    }
-}
+enum EncryptionMode { ENCRYPT, DECRYPT, UNDEFINED };
 
 int main(int argc, char *argv[]) {
     if (mixColMatrixInv.isSingular()) {
         throw std::runtime_error("Mix columns matrix is singular, no inverse exists.");
     }
+    
+    std::string prevArg;
+    std::string filePathStr;
+    std::string outputDirStr;
+    EncryptionMode encryptionMode = UNDEFINED;
+    bool deletePrev = false;
 
-    if (argc != 2) {
-        std::cerr << "Error";
+    for (int i = 1; i < argc; i++) {
+        char *arg = argv[i];
+        std::string argStr = std::string(arg);
+
+        if (argStr == "encrypt") encryptionMode = ENCRYPT;
+        else if (argStr == "decrypt") encryptionMode = DECRYPT;
+        else if (argStr == "--delete" || argStr == "-d") deletePrev = true;
+        else {
+            if (prevArg == "--output" || prevArg == "-o") outputDirStr = arg;
+            else if (filePathStr.empty()) filePathStr = arg;
+        }
+
+        prevArg = argStr;
+    }
+
+    if (encryptionMode == UNDEFINED) {
+        std::cerr << "Encryption mode unspecified.";
 
         return 1;
     }
 
-    std::string filePath = argv[1];
-    std::string fileData = readFile(filePath);
+    std::filesystem::path inputPath(filePathStr); // Make sure this exists first before doing stuff below
+    std::filesystem::path outputPath;
+    std::filesystem::path metadataPath;
+    std::string initVecStr;
 
-    bool encrypted = std::filesystem::path(filePath).extension() == encryptedExtension;
+    if (outputDirStr.empty()) {
+        outputPath = inputPath;
+        metadataPath = inputPath;
+    } else {
+        outputPath = outputDirStr / inputPath.filename();
+        metadataPath = outputDirStr / inputPath.filename();
+    }
 
-    std::string rootFilePath = encrypted ? filePath.substr(0, filePath.length() - encryptedExtension.size()) : filePath;
-    std::string ivPath = rootFilePath + ivExtension;
+    if (encryptionMode == ENCRYPT) {
+        if (inputPath.extension() == decryptedExtension) {
+            inputPath.replace_extension("");
+            metadataPath.replace_extension(metadataExtension);
+        } else {
+            outputPath += encryptedExtension;
+            metadataPath += metadataExtension;
+        }
+        
+        initVecStr = generateIV(blockSize);
 
-    std::string iv = encrypted ? readFile(ivPath) : generateIV(blockSize);
+    } else if (encryptionMode == DECRYPT) {
+        if (inputPath.extension() == encryptedExtension) {
+            outputPath.replace_extension("");
+            metadataPath.replace_extension(metadataExtension);
+        } else {
+            outputPath += decryptedExtension;
+            metadataPath += metadataExtension;
+        }
+
+        initVecStr = readFile(metadataPath);
+    }
+
+    std::cout << inputPath << '\n' << metadataPath << '\n' << outputPath << '\n';
+
+    std::string inputData = readFile(inputPath);
 
     std::string password;
-    std::cout << (encrypted ? "Decrypting" : "Encrypting") << " file, input password key: ";
+    std::cout << (encryptionMode == ENCRYPT ? "Encrypting" : "Decrypting") << " file, input password key: ";
     std::cin >> password;
 
     if (password.length() != keySize) {
         throw std::invalid_argument("Key does not match required length of " + std::to_string(keySize));
     }
 
-    Block<cols, rows> ivBlock = Block<cols, rows>::fromString(iv);
+    Block<cols, rows> initVec = Block<cols, rows>::fromString(initVecStr);
     Block<keyWordCount, rows> key = Block<keyWordCount, rows>::fromString(password);
 
     KeySchedule<cols, rows, rounds> keySchedule = KeySchedule<cols, rows, rounds>(key, subBox, roundConstants);
-    BlockString<cols, rows> blockString = BlockString<cols, rows>(fileData, encrypted);
+    BlockString<cols, rows> blockString = BlockString<cols, rows>(inputData, encryptionMode == DECRYPT);
 
-    if (encrypted) blockString.cbcDecrypt(keySchedule, subBox, mixColMatrixInv, ivBlock);
-    else blockString.cbcEncrypt(keySchedule, subBox, mixColMatrix, ivBlock);
+    if (encryptionMode == ENCRYPT) blockString.cbcEncrypt(keySchedule, subBox, mixColMatrix, initVec);
+    else if (encryptionMode == DECRYPT) blockString.cbcDecrypt(keySchedule, subBox, mixColMatrixInv, initVec);
 
-    std::string newData = blockString.getText(encrypted);
+    std::string outputData = blockString.getText(encryptionMode == DECRYPT);
 
-    writeToFile(filePath, newData);
-    renameFile(filePath, encrypted ? rootFilePath : rootFilePath + encryptedExtension);
+    writeToFile(outputPath, outputData);
 
-    if (encrypted) {
-        deleteFile(ivPath);
-    } else {
-        writeToFile(ivPath, iv);
-    }
+    if (encryptionMode == ENCRYPT) writeToFile(metadataPath, initVecStr);
+    else if (encryptionMode == DECRYPT) deleteFile(metadataPath);
+
+    if (deletePrev) deleteFile(inputPath);
 
     return 0;
 }
