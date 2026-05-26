@@ -110,12 +110,12 @@ public:
         int direction = invDir ? -1 : 1;
 
         for (int i = 0; i < size; i++) {
-            int newInd = mod(i + direction, size);
+            int newInd = Util::properMod(i + direction, size);
 
             values[i] = temp_bytes[newInd];
         }
     }
-    
+
     void subWord(const SubstitutionBox& subBox, bool inverse = false) {
         for (int i = 0; i < size; i++) {
             values[i] = inverse ? subBox.sub(values[i]) : subBox.subInv(values[i]);

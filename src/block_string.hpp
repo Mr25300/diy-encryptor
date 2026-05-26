@@ -2,7 +2,6 @@
 
 #include <string>
 #include <vector>
-#include <array>
 
 #include "substitution_box.hpp"
 #include "block.hpp"

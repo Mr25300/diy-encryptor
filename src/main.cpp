@@ -3,10 +3,9 @@
 #include <filesystem>
 #include <string>
 #include <array>
-#include <vector>
 #include <ostream>
+#include <random>
 
-#include "pbkdf2.hpp"
 #include "gf256.hpp"
 #include "vector.hpp"
 #include "matrix.hpp"
@@ -42,8 +41,6 @@ constexpr SubstitutionBox subBox;
 
 constexpr Matrix<rows> mixColMatrix = Matrix<rows>::createCirculantMatrix(Vector<rows>({2, 3, 1, 1}));
 constexpr Matrix<rows> mixColMatrixInv = mixColMatrix.inverse();
-
-constexpr SHA256 sha;
 
 const std::string encryptedExtension = ".enc";
 const std::string decryptedExtension = ".dec";
@@ -103,7 +100,7 @@ int main(int argc, char *argv[]) {
     if (mixColMatrixInv.isSingular()) {
         throw std::runtime_error("Mix columns matrix is singular, no inverse exists.");
     }
-    
+
     std::string prevArg;
     std::string filePathStr;
     std::string outputDirStr;
@@ -152,7 +149,7 @@ int main(int argc, char *argv[]) {
             outputPath += encryptedExtension;
             metadataPath += metadataExtension;
         }
-        
+
         initVecStr = generateIV(blockSize);
 
     } else if (encryptionMode == DECRYPT) {

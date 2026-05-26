@@ -1,8 +1,5 @@
 #pragma once
 
-#include <string>
-#include <sstream>
-
 #include "vector.hpp"
 
 template <size_t size>

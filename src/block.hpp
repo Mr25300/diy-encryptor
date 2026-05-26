@@ -2,10 +2,10 @@
 
 #include <string>
 #include <ostream>
-#include <random>
 
 #include "substitution_box.hpp"
 #include "vector.hpp"
+#include "matrix.hpp"
 #include "key_schedule.hpp"
 #include "util.hpp"
 
@@ -21,13 +21,11 @@ public:
     Block(std::array<Vector<rows>, cols> values) : words(values) {}
 
     static Block<cols, rows> fromString(std::string str) {
-        size_t len = str.length();
-
         Block<cols, rows> block;
 
         for (int c = 0; c < cols; c++) {
             for (int r = 0; r < rows; r++) {
-                block.words[c][r] = str[(c * rows + r) % len];
+                block.words[c][r] = str[(c * rows + r) % str.length()];
             }
         }
 
@@ -55,13 +53,13 @@ public:
     }
 
     void shiftRows(bool invDir = false) {
-        std::array<Vector<rows>, cols> tempValues = words;
+        std::array<Vector<rows>, cols> tempValues{words};
 
         int direction = invDir ? -1 : 1;
 
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                int shiftedCol = mod(c + r * direction, cols); // Shift row an amount equal to the corresponding row number in the correct direction
+                int shiftedCol{Util::properMod(c + r * direction, cols)}; // Shift row an amount equal to the corresponding row number in the correct direction
 
                 words[c][r] = tempValues[shiftedCol][r];
             }
