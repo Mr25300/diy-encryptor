@@ -1,24 +1,12 @@
+#pragma once
+
 #include <vector>
 #include <cstdint>
 
-class PRF {
-public:
-    virtual void compute() const = 0;
-    virtual size_t outputSize() const = 0;
-};
+#include "prf.hpp"
+#include "pbkdf.hpp"
 
-class HMAC : public PRF {
-public:
-    void compute() {
-        return;
-    }
-
-    size_t outputSize() {
-        return 0;
-    }
-};
-
-class PBKDF2 {
+class PBKDF2 { // Should implement PBKDF
 private:
     const std::vector<uint8_t>& salt;
     int iterations;

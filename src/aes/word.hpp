@@ -2,17 +2,17 @@
 
 #include <ostream>
 
-#include "gf256.hpp"
+#include <math/gf256.hpp>
+#include <math/utils.hpp>
 #include "substitution_box.hpp"
-#include "util.hpp"
 
 template <size_t size>
-class Vector {
+class Word {
     std::array<GF256, size> values;
 
 public:
-    constexpr Vector() : values{} {}
-    constexpr Vector(std::array<GF256, size> values) : values(values) {}
+    constexpr Word() : values{} {}
+    constexpr Word(std::array<GF256, size> values) : values(values) {}
 
     constexpr const GF256& operator[](uint8_t index) const {
         return values[index];
@@ -22,17 +22,17 @@ public:
         return values[index];
     }
 
-    constexpr Vector operator+(const Vector& other) const {
+    constexpr Word operator+(const Word& other) const {
         std::array<GF256, size> newValues;
 
         for (int i = 0; i < size; i++) {
             newValues[i] = values[i] + other.values[i];
         }
 
-        return Vector(newValues);
+        return Word(newValues);
     }
 
-    constexpr Vector& operator+=(const Vector& other) {
+    constexpr Word& operator+=(const Word& other) {
         for (int i = 0; i < size; i++) {
             values[i] += other.values[i];
         }
@@ -40,17 +40,17 @@ public:
         return *this;
     }
 
-    constexpr Vector operator-(const Vector& other) const {
+    constexpr Word operator-(const Word& other) const {
         std::array<GF256, size> newValues;
 
         for (int i = 0; i < size; i++) {
             newValues[i] = values[i] - other.values[i];
         }
 
-        return Vector(newValues);
+        return Word(newValues);
     }
 
-    constexpr Vector& operator-=(const Vector& other) {
+    constexpr Word& operator-=(const Word& other) {
         for (int i = 0; i < size; i++) {
             values[i] -= other.values[i];
         }
@@ -58,17 +58,17 @@ public:
         return *this;
     }
 
-    constexpr Vector operator*(GF256 scalar) const {
+    constexpr Word operator*(GF256 scalar) const {
         std::array<GF256, size> newValues;
 
         for (int i = 0; i < size; i++) {
             newValues[i] = values[i] * scalar;
         }
 
-        return Vector(newValues);
+        return Word(newValues);
     }
 
-    constexpr Vector& operator*=(GF256 scalar) {
+    constexpr Word& operator*=(GF256 scalar) {
         for (int i = 0; i < size; i++) {
             values[i] *= scalar;
         }
@@ -76,17 +76,17 @@ public:
         return *this;
     }
 
-    constexpr Vector operator/(GF256 scalar) const {
+    constexpr Word operator/(GF256 scalar) const {
         std::array<GF256, size> newValues;
 
         for (int i = 0; i < size; i++) {
             newValues[i] = values[i] / scalar;
         }
 
-        return Vector(newValues);
+        return Word(newValues);
     }
 
-    constexpr Vector& operator/=(GF256 scalar) {
+    constexpr Word& operator/=(GF256 scalar) {
         for (int i = 0; i < size; i++) {
             values[i] /= scalar;
         }
@@ -94,7 +94,7 @@ public:
         return *this;
     }
 
-    constexpr GF256 operator*(const Vector& other) const {
+    constexpr GF256 operator*(const Word& other) const {
         GF256 sum = 0;
 
         for (int i = 0; i < size; i++) {
@@ -110,7 +110,7 @@ public:
         int direction = invDir ? -1 : 1;
 
         for (int i = 0; i < size; i++) {
-            int newInd = Util::properMod(i + direction, size);
+            int newInd = utils::properMod(i + direction, size);
 
             values[i] = temp_bytes[newInd];
         }
@@ -134,7 +134,7 @@ public:
         }
     }
 
-    friend std::ostream& operator<<(std::ostream& stream, const Vector<size>& vector) {
+    friend std::ostream& operator<<(std::ostream& stream, const Word<size>& vector) {
         vector.print(stream);
 
         return stream;

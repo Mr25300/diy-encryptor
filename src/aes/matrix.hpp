@@ -1,14 +1,14 @@
 #pragma once
 
-#include "vector.hpp"
+#include "word.hpp"
 
 template <size_t size>
 class Matrix {
-    std::array<Vector<size>, size> rows;
+    std::array<Word<size>, size> rows;
     bool singular;
 
-    Vector<size> matMultiply(const Vector<size>& word) const {
-        Vector<size> newWord = word;
+    Word<size> matMultiply(const Word<size>& word) const {
+        Word<size> newWord = word;
 
         for (int i = 0; i < size; i++) {
             newWord[i] = rows[i] * word;
@@ -19,10 +19,10 @@ class Matrix {
 
 public:
     constexpr Matrix() : rows{} {}
-    constexpr Matrix(std::array<Vector<size>, size> values) : rows(values), singular(false) {}
+    constexpr Matrix(std::array<Word<size>, size> values) : rows(values), singular(false) {}
 
     static constexpr Matrix<size> createIdentityMatrix() {
-        std::array<Vector<size>, size> values;
+        std::array<Word<size>, size> values;
 
         for (int i = 0; i < size; i++) {
             for (int j = 0; j < size; j++) {
@@ -33,9 +33,9 @@ public:
         return Matrix<size>(values);
     }
 
-    static constexpr Matrix<size> createCirculantMatrix(const Vector<size>& initRow) {
-        Vector<size> tempRow = initRow;
-        std::array<Vector<size>, size> values;
+    static constexpr Matrix<size> createCirculantMatrix(const Word<size>& initRow) {
+        Word<size> tempRow = initRow;
+        std::array<Word<size>, size> values;
 
         for (int i = 0; i < size; i++) {
             values[i] = tempRow;
@@ -45,11 +45,11 @@ public:
         return Matrix<size>(values);
     }
 
-    constexpr const Vector<size>& operator[](uint8_t index) const {
+    constexpr const Word<size>& operator[](uint8_t index) const {
         return rows[index];
     }
 
-    constexpr Vector<size>& operator[](uint8_t index) {
+    constexpr Word<size>& operator[](uint8_t index) {
         return rows[index];
     }
 
@@ -75,22 +75,22 @@ public:
         return *this;
     }
 
-    constexpr Vector<size> operator*(const Vector<size>& word) const {
+    constexpr Word<size> operator*(const Word<size>& word) const {
         return matMultiply(word);
     }
 
-    constexpr friend Vector<size> operator*(const Vector<size>& word, const Matrix<size>& mat) {
+    constexpr friend Word<size> operator*(const Word<size>& word, const Matrix<size>& mat) {
         return mat * word;
     }
 
-    constexpr friend Vector<size>& operator*=(Vector<size>& word, const Matrix<size>& mat) {
+    constexpr friend Word<size>& operator*=(Word<size>& word, const Matrix<size>& mat) {
         word = mat * word;
 
         return word;
     }
 
     constexpr Matrix<size> operator*(const Matrix<size>& matrix) const {
-        std::array<Vector<size>, size> values;
+        std::array<Word<size>, size> values;
 
         for (int r = 0; r < size; r++) {
             for (int c = 0; c < size; c++) {
@@ -119,8 +119,8 @@ public:
 
                 if (pivot != 0) {
                     if (rowInd != currentPivotRow) {
-                        Vector<size> tempRow = A.rows[rowInd];
-                        Vector<size> invTempRow = I.rows[rowInd];
+                        Word<size> tempRow = A.rows[rowInd];
+                        Word<size> invTempRow = I.rows[rowInd];
 
                         A.rows[rowInd] = A.rows[currentPivotRow];
                         A.rows[currentPivotRow] = tempRow;
@@ -129,8 +129,8 @@ public:
                         I.rows[currentPivotRow] = invTempRow;
                     }
 
-                    Vector<size>& invPivotRow = I.rows[currentPivotRow];
-                    Vector<size>& pivotRow = A.rows[currentPivotRow];
+                    Word<size>& invPivotRow = I.rows[currentPivotRow];
+                    Word<size>& pivotRow = A.rows[currentPivotRow];
 
                     pivotRow /= pivot;
                     invPivotRow /= pivot;
@@ -138,8 +138,8 @@ public:
                     for (int i = 0; i < size; i++) {
                         if (i == currentPivotRow) continue;
 
-                        Vector<size>& otherRow = A.rows[i];
-                        Vector<size>& invOtherRow = I.rows[i];
+                        Word<size>& otherRow = A.rows[i];
+                        Word<size>& invOtherRow = I.rows[i];
 
                         GF256 factor = otherRow[pivotCol];
 

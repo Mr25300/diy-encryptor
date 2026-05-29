@@ -4,7 +4,7 @@
 #include <ostream>
 
 #include "substitution_box.hpp"
-#include "vector.hpp"
+#include "word.hpp"
 #include "block.hpp"
 
 template <size_t cols, size_t rows>
@@ -14,7 +14,7 @@ template <size_t cols, size_t rows, size_t rounds>
 class KeySchedule {
     std::array<Block<cols, rows>, rounds + 1> roundKeys;
 
-    Vector<rows>& getWord(size_t wordIndex) {
+    Word<rows>& getWord(size_t wordIndex) {
         return roundKeys[wordIndex / cols][wordIndex % cols];
     }
 
@@ -29,9 +29,9 @@ public:
         }
 
         for (; currentWord < totalWords; currentWord++) {
-            Vector<rows>& word = this->getWord(currentWord);
-            Vector<rows>& aboveWord = this->getWord(currentWord - keyWordCount);
-            Vector<rows> intermediateWord = this->getWord(currentWord - 1);
+            Word<rows>& word = this->getWord(currentWord);
+            Word<rows>& aboveWord = this->getWord(currentWord - keyWordCount);
+            Word<rows> intermediateWord = this->getWord(currentWord - 1);
 
             if (currentWord % keyWordCount == 0) {
                 intermediateWord.rotWord();

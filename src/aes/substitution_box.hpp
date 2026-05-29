@@ -1,10 +1,9 @@
 #pragma once
 
 #include <array>
-#include <string>
 #include <ostream>
 
-#include "gf256.hpp"
+#include <math/gf256.hpp>
 
 class SubstitutionBox {
     std::array<GF256, 256> map;

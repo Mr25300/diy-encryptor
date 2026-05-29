@@ -4,49 +4,44 @@
 #include <span>
 #include <algorithm>
 
-#include "../util.hpp"
+#include <math/utils.hpp>
+#include "hash.hpp"
 
-class HashFunction {
-public:
-    virtual void hash(const std::vector<std::uint8_t>& input,
-            std::vector<std::uint8_t>& output) const = 0;
-    virtual std::size_t blockSize() const = 0;
-    virtual std::size_t outputLen() const = 0;
-};
+namespace {
+    static std::uint32_t rightrot(std::uint32_t word, std::uint32_t amount) {
+        if (amount == 0) return word;
 
-static std::uint32_t rightrot(std::uint32_t word, std::uint32_t amount) {
-    if (amount == 0) return word;
+        amount &= 31;
 
-    amount &= 31;
+        return word >> amount | word << (32 - amount);
+    }
 
-    return word >> amount | word << (32 - amount);
+    static std::uint32_t ch(std::uint32_t x, std::uint32_t y, std::uint32_t z) {
+        return (x & y) ^ (~x & z);
+    }
+
+    static std::uint32_t maj(std::uint32_t x, std::uint32_t y, std::uint32_t z) {
+        return (x & y) ^ (x & z) ^ (y & z);
+    }
+
+    static std::uint32_t sum0(std::uint32_t x) {
+        return rightrot(x, 2) ^ rightrot(x, 13) ^ rightrot(x, 22);
+    }
+
+    static std::uint32_t sum1(std::uint32_t x) {
+        return rightrot(x, 6) ^ rightrot(x, 11) ^ rightrot(x, 25);
+    }
+
+    static std::uint32_t sigma0(std::uint32_t x) {
+        return rightrot(x, 7) ^ rightrot(x, 18) ^ (x >> 3);
+    }
+
+    static std::uint32_t sigma1(std::uint32_t x) {
+        return rightrot(x, 17) ^ rightrot(x, 19) ^ (x >> 10);
+    }
 }
 
-static std::uint32_t ch(std::uint32_t x, std::uint32_t y, std::uint32_t z) {
-    return (x & y) ^ (~x & z);
-}
-
-static std::uint32_t maj(std::uint32_t x, std::uint32_t y, std::uint32_t z) {
-    return (x & y) ^ (x & z) ^ (y & z);
-}
-
-static std::uint32_t sum0(std::uint32_t x) {
-    return rightrot(x, 2) ^ rightrot(x, 13) ^ rightrot(x, 22);
-}
-
-static std::uint32_t sum1(std::uint32_t x) {
-    return rightrot(x, 6) ^ rightrot(x, 11) ^ rightrot(x, 25);
-}
-
-static std::uint32_t sigma0(std::uint32_t x) {
-    return rightrot(x, 7) ^ rightrot(x, 18) ^ (x >> 3);
-}
-
-static std::uint32_t sigma1(std::uint32_t x) {
-    return rightrot(x, 17) ^ rightrot(x, 19) ^ (x >> 10);
-}
-
-class SHA256 : public HashFunction {
+class SHA256 : public Hash {
 private:
     std::array<uint32_t, 8> h;
     std::array<uint32_t, 64> k;
@@ -90,16 +85,15 @@ public:
         constexpr std::array<unsigned int, 64> primes{SHA256::getPrimes()};
 
         for (std::size_t i{}; i < 8; ++i) {
-            this->h[i] = SHA256::getFractionalBits(Util::constexprSqrt(primes[i]));
+            this->h[i] = SHA256::getFractionalBits(utils::constexprSqrt(primes[i]));
         }
 
         for (std::size_t i{}; i < 64; ++i) {
-            this->k[i] = SHA256::getFractionalBits(Util::constexprCbrt(primes[i]));
+            this->k[i] = SHA256::getFractionalBits(utils::constexprCbrt(primes[i]));
         }
     }
 
-    void hash(const std::vector<std::uint8_t>& input,
-            std::vector<std::uint8_t>& output) const {
+    std::vector<std::uint8_t> compute(const std::vector<std::uint8_t>& input) const {
         std::array<std::uint32_t, 8> hCopy{this->h};
         const std::array<std::uint32_t, 64>& kRef = this->k;
 
@@ -109,7 +103,7 @@ public:
         for (std::size_t i{}; i < inputWords; ++i) { // Loop through words (32 bit segments)
             std::size_t chunkIndex{i / 16};
 
-            if (chunkIndex >= chunks.size()) chunks.emplace_back();
+            if (chunkIndex >= chunks.size()) chunks.emplace_back(); // Triggers zero-initialization
 
             std::array<std::uint32_t, 16>& chunk{chunks[chunkIndex]};
             std::uint32_t word{0};
@@ -168,18 +162,24 @@ public:
             }
         }
 
-        for (std::uint32_t word : hCopy) {
+        std::vector<std::uint8_t> output(32);
+
+        for (int i{}; i < 8; ++i) {
+            std::uint32_t word{hCopy[i]};
+
             for (int j{}; j < 4; ++j) {
-                output.emplace_back(static_cast<std::uint8_t>(word >> (3 - j) * 8));
+                output[i * 4 + j] = static_cast<std::uint8_t>(word >> (3 - j) * 8);
             }
         }
+
+        return output;
     }
 
     std::size_t blockSize() const {
-        return 0;
+        return 64;
     }
 
-    std::size_t outputLen() const {
+    std::size_t outputSize() const {
         return 32;
     }
 };

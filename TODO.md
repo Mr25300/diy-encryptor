@@ -1,5 +1,4 @@
 - Implement PBKDF2 to transform user inputted password into a stronger key with the correct length
-- Move functions that "rotate" bits into a separate file to be used both for SHA256 and by GF256
 - Add tests
 - Optimize all classes, methods and ensure memory is managed properly
 - Reformat all code for maximum performance while maintaining readability

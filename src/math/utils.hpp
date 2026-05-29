@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Util {
+namespace utils {
     constexpr int properMod(int num, int base) {
         return (num % base + base) % base;
     }

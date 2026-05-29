@@ -3,22 +3,22 @@
 #include <string>
 #include <ostream>
 
+#include <math/utils.hpp>
 #include "substitution_box.hpp"
-#include "vector.hpp"
+#include "word.hpp"
 #include "matrix.hpp"
 #include "key_schedule.hpp"
-#include "util.hpp"
 
 template <size_t cols, size_t rows, size_t rounds>
 class KeySchedule;
 
 template <size_t cols, size_t rows>
 class Block {
-    std::array<Vector<rows>, cols> words;
+    std::array<Word<rows>, cols> words;
 
 public:
     Block() : words{} {}
-    Block(std::array<Vector<rows>, cols> values) : words(values) {}
+    Block(std::array<Word<rows>, cols> values) : words(values) {}
 
     static Block<cols, rows> fromString(std::string str) {
         Block<cols, rows> block;
@@ -32,11 +32,11 @@ public:
         return block;
     }
 
-    const Vector<rows>& operator[](uint8_t index) const {
+    const Word<rows>& operator[](uint8_t index) const {
         return words[index];
     }
 
-    Vector<rows>& operator[](uint8_t index) {
+    Word<rows>& operator[](uint8_t index) {
         return words[index];
     }
 
@@ -53,13 +53,13 @@ public:
     }
 
     void shiftRows(bool invDir = false) {
-        std::array<Vector<rows>, cols> tempValues{words};
+        std::array<Word<rows>, cols> tempValues{words};
 
         int direction = invDir ? -1 : 1;
 
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                int shiftedCol{Util::properMod(c + r * direction, cols)}; // Shift row an amount equal to the corresponding row number in the correct direction
+                int shiftedCol{utils::properMod(c + r * direction, cols)}; // Shift row an amount equal to the corresponding row number in the correct direction
 
                 words[c][r] = tempValues[shiftedCol][r];
             }

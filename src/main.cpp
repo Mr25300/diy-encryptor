@@ -6,13 +6,13 @@
 #include <ostream>
 #include <random>
 
-#include "gf256.hpp"
-#include "vector.hpp"
-#include "matrix.hpp"
-#include "block.hpp"
-#include "block_string.hpp"
-#include "key_schedule.hpp"
-#include "substitution_box.hpp"
+#include <math/gf256.hpp>
+#include <aes/word.hpp>
+#include <aes/matrix.hpp>
+#include <aes/block.hpp>
+#include <aes/block_string.hpp>
+#include <aes/key_schedule.hpp>
+#include <aes/substitution_box.hpp>
 
 constexpr size_t cols = 4;
 constexpr size_t rows = 4;
@@ -39,7 +39,7 @@ constexpr std::array<GF256, rounds> roundConstants = []() constexpr {
 
 constexpr SubstitutionBox subBox;
 
-constexpr Matrix<rows> mixColMatrix = Matrix<rows>::createCirculantMatrix(Vector<rows>({2, 3, 1, 1}));
+constexpr Matrix<rows> mixColMatrix = Matrix<rows>::createCirculantMatrix(Word<rows>({2, 3, 1, 1}));
 constexpr Matrix<rows> mixColMatrixInv = mixColMatrix.inverse();
 
 const std::string encryptedExtension = ".enc";
