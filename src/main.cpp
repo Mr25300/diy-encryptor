@@ -46,7 +46,7 @@ constexpr SubstitutionBox subBox;
 constexpr Matrix<rows> mixColMatrix = Matrix<rows>::createCirculantMatrix(Word<rows>({2, 3, 1, 1}));
 constexpr Matrix<rows> mixColMatrixInv = mixColMatrix.inverse();
 
-constexpr int kdfIterations{600000};
+constexpr int kdfIterations{4096};
 constexpr SHA256 sha256{};
 constexpr HMAC hmac{sha256};
 constexpr PBKDF2 pbkdf2{hmac, kdfIterations};

@@ -13,5 +13,5 @@ private:
 public:
     constexpr PBKDF2(const PRF& prf, int iterations) : prf(prf), iters{iterations} {}
 
-    std::vector<uint8_t> compute(const std::vector<uint8_t>& key, const std::vector<uint8_t>& salt);
+    std::vector<uint8_t> compute(const std::vector<uint8_t>& key, const std::vector<uint8_t>& salt, std::size_t keySize) const;
 };
