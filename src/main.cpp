@@ -14,6 +14,10 @@
 #include <aes/key_schedule.hpp>
 #include <aes/substitution_box.hpp>
 
+#include <hash/sha256.hpp>
+#include <kdf/hmac.hpp>
+#include <kdf/pbkdf2.hpp>
+
 constexpr size_t cols = 4;
 constexpr size_t rows = 4;
 constexpr size_t blockSize = cols * rows;
@@ -41,6 +45,11 @@ constexpr SubstitutionBox subBox;
 
 constexpr Matrix<rows> mixColMatrix = Matrix<rows>::createCirculantMatrix(Word<rows>({2, 3, 1, 1}));
 constexpr Matrix<rows> mixColMatrixInv = mixColMatrix.inverse();
+
+constexpr int kdfIterations{600000};
+constexpr SHA256 sha256{};
+constexpr HMAC hmac{sha256};
+constexpr PBKDF2 pbkdf2{hmac, kdfIterations};
 
 const std::string encryptedExtension = ".enc";
 const std::string decryptedExtension = ".dec";
@@ -107,7 +116,7 @@ int main(int argc, char *argv[]) {
     EncryptionMode encryptionMode = UNDEFINED;
     bool deletePrev = false;
 
-    for (int i = 1; i < argc; i++) {
+    for (int i{1}; i < argc; i++) {
         char *arg = argv[i];
         std::string argStr = std::string(arg);
 

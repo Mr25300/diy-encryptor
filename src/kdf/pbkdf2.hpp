@@ -4,23 +4,14 @@
 #include <cstdint>
 
 #include "prf.hpp"
-#include "pbkdf.hpp"
 
-class PBKDF2 { // Should implement PBKDF
+class PBKDF2 {
 private:
-    const std::vector<uint8_t>& salt;
-    int iterations;
+    const PRF& prf;
+    int iters;
 
 public:
-    PBKDF2(const PRF& prf, const std::vector<uint8_t>& salt, int iterations) : salt(salt), iterations(iterations) {}
+    constexpr PBKDF2(const PRF& prf, int iterations) : prf(prf), iters{iterations} {}
 
-    std::vector<uint8_t> pseudorandomFunction(const std::vector<uint8_t>& input) {
-        return {};
-    }
-
-    std::vector<uint8_t> deriveKey(const std::vector<uint8_t>& password, size_t keyLength) {
-        // if (keyLength > (2 ^ 32 - 1) * hLen) throw error (hLen = length of pseudorandom output)
-
-        return {};
-    }
+    std::vector<uint8_t> compute(const std::vector<uint8_t>& key, const std::vector<uint8_t>& salt);
 };
