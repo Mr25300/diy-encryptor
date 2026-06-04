@@ -8,7 +8,7 @@ std::vector<uint8_t> PBKDF2::compute(const std::vector<uint8_t>& key, const std:
         throw std::invalid_argument("Derived key size must be greater than 0.");
     }
 
-    std::size_t hLen{this->prf.outputSize()};
+    std::size_t hLen{prf.outputSize()};
 
     // Since indexing variable is only 4 bytes
     if (dKeySize / hLen > std::numeric_limits<std::uint32_t>::max()) {
@@ -30,16 +30,16 @@ std::vector<uint8_t> PBKDF2::compute(const std::vector<uint8_t>& key, const std:
         std::vector<std::uint8_t>& tVal{tVals[i - 1]};
         tVal.assign(hLen, 0);
 
-        for (int j{}; j < this->iters; ++j) {
+        for (int j{}; j < iterations; ++j) {
             if (j == 0) {
                 for (int k{}; k < 4; ++k) {
                     saltAndI[salt.size() + k] = static_cast<std::uint8_t>(i >> (3 - k) * 8);
                 }
 
-                uVal = this->prf.compute(key, saltAndI);
+                uVal = prf.compute(key, saltAndI);
 
             } else {
-                uVal = this->prf.compute(key, uVal);
+                uVal = prf.compute(key, uVal);
             }
 
             for (int k{}; k < hLen; ++k) {

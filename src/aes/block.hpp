@@ -1,12 +1,14 @@
 #pragma once
 
-#include <string>
 #include <ostream>
+#include <vector>
+#include <cstdint>
+#include <stdexcept>
 
 #include <math/utils.hpp>
+#include <math/word.hpp>
+#include <math/matrix.hpp>
 #include "substitution_box.hpp"
-#include "word.hpp"
-#include "matrix.hpp"
 #include "key_schedule.hpp"
 
 template <size_t cols, size_t rows, size_t rounds>
@@ -14,29 +16,33 @@ class KeySchedule;
 
 template <size_t cols, size_t rows>
 class Block {
-    std::array<Word<rows>, cols> words;
+    std::array<math::Word<rows>, cols> words;
 
 public:
     Block() : words{} {}
-    Block(std::array<Word<rows>, cols> values) : words(values) {}
+    Block(std::array<math::Word<rows>, cols> values) : words(values) {}
 
-    static Block<cols, rows> fromString(std::string str) {
+    static Block<cols, rows> fromBytes(std::vector<std::uint8_t>& bytes) {
+        if (bytes.size() != cols * rows) {
+            throw std::invalid_argument("Length of bytes does not match block size.");
+        }
+
         Block<cols, rows> block;
 
-        for (int c = 0; c < cols; c++) {
-            for (int r = 0; r < rows; r++) {
-                block.words[c][r] = str[(c * rows + r) % str.length()];
+        for (int c{}; c < cols; ++c) {
+            for (int r{}; r < rows; ++r) {
+                block.words[c][r] = bytes[c * rows + r];
             }
         }
 
         return block;
     }
 
-    const Word<rows>& operator[](uint8_t index) const {
+    const math::Word<rows>& operator[](uint8_t index) const {
         return words[index];
     }
 
-    Word<rows>& operator[](uint8_t index) {
+    math::Word<rows>& operator[](uint8_t index) {
         return words[index];
     }
 
@@ -53,27 +59,27 @@ public:
     }
 
     void shiftRows(bool invDir = false) {
-        std::array<Word<rows>, cols> tempValues{words};
+        std::array<math::Word<rows>, cols> tempValues{words};
 
         int direction = invDir ? -1 : 1;
 
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                int shiftedCol{utils::properMod(c + r * direction, cols)}; // Shift row an amount equal to the corresponding row number in the correct direction
+                int shiftedCol{math::utils::properMod(c + r * direction, cols)}; // Shift row an amount equal to the corresponding row number in the correct direction
 
                 words[c][r] = tempValues[shiftedCol][r];
             }
         }
     }
 
-    void mixColumns(const Matrix<rows>& mat) {
+    void mixColumns(const math::Matrix<rows>& mat) {
         for (int i = 0; i < cols; i++) {
             words[i] *= mat;
         }
     }
 
     template <size_t rounds>
-    void encrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const Matrix<rows>& mixColMatrix) {
+    void encrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const math::Matrix<rows>& mixColMatrix) {
         addKey(keySchedule.getRoundKey(0));
 
         for (int n = 1; n <= rounds; n++) {
@@ -89,7 +95,7 @@ public:
     }
 
     template <size_t rounds>
-    void decrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const Matrix<rows>& mixColMatrixInv) {
+    void decrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const math::Matrix<rows>& mixColMatrixInv) {
         for (int n = rounds; n >= 1; n--) {
             addKey(keySchedule.getRoundKey(n));
 
@@ -104,7 +110,7 @@ public:
         addKey(keySchedule.getRoundKey(0));
     }
 
-    void print(std::ostream& stream, GFFormat format = GFFormat::Hex) const {
+    void print(std::ostream& stream, math::GFFormat format = math::GFFormat::Hex) const {
         for (int r = 0; r < rows; r++) {
             if (r > 0) stream << '\n';
 

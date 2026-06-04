@@ -7,15 +7,15 @@
 #include <random>
 
 #include <math/gf256.hpp>
-#include <aes/word.hpp>
-#include <aes/matrix.hpp>
+#include <math/word.hpp>
+#include <math/matrix.hpp>
 #include <aes/block.hpp>
-#include <aes/block_string.hpp>
+#include <modes/cbc.hpp>
 #include <aes/key_schedule.hpp>
 #include <aes/substitution_box.hpp>
 
 #include <hash/sha256.hpp>
-#include <kdf/hmac.hpp>
+#include <prf/hmac.hpp>
 #include <kdf/pbkdf2.hpp>
 
 constexpr size_t cols = 4;
@@ -27,11 +27,11 @@ constexpr size_t keySize = keyWordCount * rows;
 
 constexpr size_t rounds = 10; // 10, 12, 14
 
-constexpr size_t iterations = 1000;
+constexpr int kdfIterations{6000}; // Should be 600000
 
-constexpr std::array<GF256, rounds> roundConstants = []() constexpr {
-    std::array<GF256, rounds> constants{};
-    GF256 constant = 1;
+constexpr std::array<math::GF256, rounds> roundConstants = []() constexpr {
+    std::array<math::GF256, rounds> constants{};
+    math::GF256 constant = 1;
 
     for (int i = 0; i < rounds; i++) {
         constants[i] = constant;
@@ -43,10 +43,9 @@ constexpr std::array<GF256, rounds> roundConstants = []() constexpr {
 
 constexpr SubstitutionBox subBox;
 
-constexpr Matrix<rows> mixColMatrix = Matrix<rows>::createCirculantMatrix(Word<rows>({2, 3, 1, 1}));
-constexpr Matrix<rows> mixColMatrixInv = mixColMatrix.inverse();
+constexpr math::Matrix<rows> mixColMatrix = math::Matrix<rows>::createCirculantMatrix(math::Word<rows>({2, 3, 1, 1}));
+constexpr math::Matrix<rows> mixColMatrixInv = mixColMatrix.inverse();
 
-constexpr int kdfIterations{4096};
 constexpr SHA256 sha256{};
 constexpr HMAC hmac{sha256};
 constexpr PBKDF2 pbkdf2{hmac, kdfIterations};
@@ -106,7 +105,7 @@ void deleteFile(const std::filesystem::path& filePath) {
 enum EncryptionMode { ENCRYPT, DECRYPT, UNDEFINED };
 
 int main(int argc, char *argv[]) {
-    if (mixColMatrixInv.isSingular()) {
+    if (mixColMatrixInv.isSingular()) { // Make this a static_assert
         throw std::runtime_error("Mix columns matrix is singular, no inverse exists.");
     }
 
@@ -173,26 +172,24 @@ int main(int argc, char *argv[]) {
         initVecStr = readFile(metadataPath);
     }
 
-    std::cout << inputPath << '\n' << metadataPath << '\n' << outputPath << '\n';
-
     std::string inputData = readFile(inputPath);
 
     std::string password;
     std::cout << (encryptionMode == ENCRYPT ? "Encrypting" : "Decrypting") << " file, input password key: ";
     std::cin >> password;
 
-    if (password.length() != keySize) {
-        throw std::invalid_argument("Key does not match required length of " + std::to_string(keySize));
-    }
+    std::vector<std::uint8_t> passwordBytes(password.begin(), password.end());
+    std::vector<std::uint8_t> keyBytes{pbkdf2.compute(passwordBytes, {}, keySize)}; // TODO: Add password salt to file
+    std::vector<std::uint8_t> initVecBytes(initVecStr.begin(), initVecStr.end());
 
-    Block<cols, rows> initVec = Block<cols, rows>::fromString(initVecStr);
-    Block<keyWordCount, rows> key = Block<keyWordCount, rows>::fromString(password);
+    Block<cols, rows> initVec{Block<cols, rows>::fromBytes(initVecBytes)};
+    Block<keyWordCount, rows> key{Block<keyWordCount, rows>::fromBytes(keyBytes)};
 
     KeySchedule<cols, rows, rounds> keySchedule = KeySchedule<cols, rows, rounds>(key, subBox, roundConstants);
-    BlockString<cols, rows> blockString = BlockString<cols, rows>(inputData, encryptionMode == DECRYPT);
+    CBC<cols, rows> blockString = CBC<cols, rows>(inputData, encryptionMode == DECRYPT);
 
-    if (encryptionMode == ENCRYPT) blockString.cbcEncrypt(keySchedule, subBox, mixColMatrix, initVec);
-    else if (encryptionMode == DECRYPT) blockString.cbcDecrypt(keySchedule, subBox, mixColMatrixInv, initVec);
+    if (encryptionMode == ENCRYPT) blockString.encrypt(keySchedule, subBox, mixColMatrix, initVec);
+    else if (encryptionMode == DECRYPT) blockString.decrypt(keySchedule, subBox, mixColMatrixInv, initVec);
 
     std::string outputData = blockString.getText(encryptionMode == DECRYPT);
 

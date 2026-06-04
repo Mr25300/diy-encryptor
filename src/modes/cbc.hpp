@@ -3,16 +3,16 @@
 #include <string>
 #include <vector>
 
-#include "substitution_box.hpp"
-#include "block.hpp"
-#include "matrix.hpp"
+#include <aes/substitution_box.hpp>
+#include <aes/block.hpp>
+#include <math/matrix.hpp>
 
 template <size_t cols, size_t rows>
-class BlockString {
+class CBC {
     std::vector<Block<cols, rows>> blocks;
 
 public:
-    BlockString(const std::string& text, bool encrypted) {
+    CBC(const std::string& text, bool encrypted) {
         size_t blockSize = cols * rows;
         size_t textLength = text.length();
 
@@ -28,7 +28,7 @@ public:
             for (int i = 0; i < blockSize; i++) {
                 int charIndex = b * blockSize + i;
 
-                block[i / rows][i % rows] = charIndex < textLength ? static_cast<GF256>(text[charIndex]) : static_cast<GF256>(padLength);
+                block[i / rows][i % rows] = charIndex < textLength ? static_cast<math::GF256>(text[charIndex]) : static_cast<math::GF256>(padLength);
             }
 
             blocks.push_back(block);
@@ -36,7 +36,7 @@ public:
     }
 
     template <size_t rounds>
-    void cbcEncrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const Matrix<rows>& mixColMatrix, const Block<cols, rows>& ivBlock) {
+    void encrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const math::Matrix<rows>& mixColMatrix, const Block<cols, rows>& ivBlock) {
         Block<cols, rows> prevBlock = ivBlock;
 
         for (Block<cols, rows>& block : blocks) {
@@ -48,7 +48,7 @@ public:
     }
 
     template <size_t rounds>
-    void cbcDecrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const Matrix<rows>& mixColMatrixInv, const Block<cols, rows>& ivBlock) {
+    void decrypt(const KeySchedule<cols, rows, rounds>& keySchedule, const SubstitutionBox& subBox, const math::Matrix<rows>& mixColMatrixInv, const Block<cols, rows>& ivBlock) {
         Block<cols, rows> prevBlock = ivBlock;
 
         for (Block<cols, rows>& block : blocks) {

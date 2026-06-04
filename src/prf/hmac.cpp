@@ -18,11 +18,11 @@ void HMAC::appendBytes(std::vector<std::uint8_t>& bytes1, const std::vector<std:
 }
 
 std::vector<std::uint8_t> HMAC::compute(const std::vector<std::uint8_t>& key, const std::vector<std::uint8_t>& text) const {
-    std::size_t blockSize{this->hash.blockSize()};
+    std::size_t blockSize{hash.blockSize()};
     std::vector<std::uint8_t> workingKey;
 
     if (key.size() > blockSize) {
-        workingKey = this->hash.compute(key);
+        workingKey = hash.compute(key);
     } else {
         workingKey = key;
     }
@@ -34,9 +34,9 @@ std::vector<std::uint8_t> HMAC::compute(const std::vector<std::uint8_t>& key, co
     std::vector<std::uint8_t> inner{xorBytes(workingKey, ipad)};
     appendBytes(inner, text);
 
-    std::vector<std::uint8_t> innerHash{this->hash.compute(inner)};
+    std::vector<std::uint8_t> innerHash{hash.compute(inner)};
     std::vector<std::uint8_t> outer{xorBytes(workingKey, opad)};
     appendBytes(outer, innerHash);
 
-    return this->hash.compute(outer);
+    return hash.compute(outer);
 }

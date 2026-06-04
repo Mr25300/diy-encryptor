@@ -1,6 +1,6 @@
 #pragma once
 
-namespace utils {
+namespace math::utils {
     constexpr int properMod(int num, int base) {
         return (num % base + base) % base;
     }
@@ -23,7 +23,7 @@ namespace utils {
 
     constexpr double constexprCbrt(double num) {
         double absNum{num < 0.0 ? -num : num};
-        double curr{num};
+        double curr{num}; // TODO: Test with negative num, if it breaks replace num with absNum here
         double prev{0};
 
         for (int i{}; i < 20; ++i) {

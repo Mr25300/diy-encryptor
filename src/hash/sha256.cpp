@@ -36,7 +36,7 @@ static std::uint32_t sigma1(std::uint32_t x) {
 }
 
 std::vector<std::uint8_t> SHA256::compute(const std::vector<std::uint8_t>& input) const {
-    std::array<std::uint32_t, 8> hCopy{this->hVals};
+    std::array<std::uint32_t, 8> hCopy{hVals};
 
     std::vector<std::array<std::uint32_t, 16>> chunks;
     std::size_t inputWords{(input.size() >> 2) + 1}; // Divide by 4 and add an extra 1
@@ -85,7 +85,7 @@ std::vector<std::uint8_t> SHA256::compute(const std::vector<std::uint8_t>& input
 
         for (std::size_t i{}; i < 64; ++i) {
             uint32_t temp1{hVars[7] + sum1(hVars[4]) + ch(hVars[4], hVars[5], hVars[6])
-                + this->kVals[i] + w[i]};
+                + kVals[i] + w[i]};
             uint32_t temp2{sum0(hVars[0]) + maj(hVars[0], hVars[1], hVars[2])};
 
             hVars[7] = hVars[6];

@@ -6,13 +6,13 @@
 #include <math/gf256.hpp>
 
 class SubstitutionBox {
-    std::array<GF256, 256> map;
-    std::array<GF256, 256> mapInv;
+    std::array<math::GF256, 256> map;
+    std::array<math::GF256, 256> mapInv;
 
     static constexpr uint8_t constantVector = 0b01100011;
 
-    static constexpr GF256 getTransformedByte(GF256 value) {
-        GF256 invValue = value.inv();
+    static constexpr math::GF256 getTransformedByte(math::GF256 value) {
+        math::GF256 invValue = value.inv();
 
         uint8_t byte = invValue.get();
         uint8_t result = 0;
@@ -34,18 +34,18 @@ class SubstitutionBox {
 public:
     constexpr SubstitutionBox() : map{}, mapInv{} {
         for (int i = 0; i < 256; i++) {
-            GF256 transformedByte = getTransformedByte(i);
+            math::GF256 transformedByte = getTransformedByte(i);
 
             map[i] = transformedByte;
             mapInv[transformedByte.get()] = i;
         }
     }
 
-    GF256 sub(GF256 val) const {
+    math::GF256 sub(math::GF256 val) const {
         return map[val.get()];
     }
 
-    GF256 subInv(GF256 val) const {
+    math::GF256 subInv(math::GF256 val) const {
         return mapInv[val.get()];
     }
 
@@ -54,9 +54,9 @@ public:
             if (i > 0) stream << '\n';
 
             for (int j = 0; j < 16; j++) {
-                GF256 outputByte = subBox.map[(i << 4) ^ j];
+                math::GF256 outputByte = subBox.map[(i << 4) ^ j];
 
-                outputByte.print(stream, GFFormat::Hex);
+                outputByte.print(stream, math::GFFormat::Hex);
 
                 if (i != 15 || j != 15) {
                     stream << ',' << ' ';

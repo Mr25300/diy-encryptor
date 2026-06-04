@@ -1,4 +1,13 @@
-- Implement PBKDF2 to transform user inputted password into a stronger key with the correct length
+- Move AES implementations to separate cpp files
+- Replace AES words and blocks with vectors and matrices (i.e. using AESWord = Vector<cols>)
+- Make all AES methods independent of block and vector classes, instead taking them in as parameters
+- Improve GF256 printing in blocks and vectors by manipulating cout stream state (similar to std::cout << std::hex) instead of passing in GFFormat
+- Organize classes and functions into namespaces better
+- Improve Makefile (more automation)
+- Use templates for PBKDF related classes so that output sizes can be constexpr
+- Replace BlockString with CBC class
+- Modularize PBKDF related code better
+- Clean up code style (use correct methods of initialization, etc.)
 - Add tests
 - Optimize all classes, methods and ensure memory is managed properly
 - Reformat all code for maximum performance while maintaining readability

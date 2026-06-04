@@ -51,11 +51,11 @@ public:
         constexpr std::array<unsigned int, 64> primes{SHA256::getPrimes()};
 
         for (std::size_t i{}; i < 8; ++i) {
-            this->hVals[i] = SHA256::getFractionalBits(utils::constexprSqrt(primes[i]));
+            this->hVals[i] = SHA256::getFractionalBits(math::utils::constexprSqrt(primes[i]));
         }
 
         for (std::size_t i{}; i < 64; ++i) {
-            this->kVals[i] = SHA256::getFractionalBits(utils::constexprCbrt(primes[i]));
+            this->kVals[i] = SHA256::getFractionalBits(math::utils::constexprCbrt(primes[i]));
         }
     }
 
