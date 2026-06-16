@@ -1,15 +1,13 @@
 #pragma once
 
-namespace math::utils {
-    constexpr int properMod(int num, int base) {
-        return (num % base + base) % base;
-    }
+#include <cstddef>
 
-    constexpr double constexprSqrt(double num) {
+namespace math::utils {
+    constexpr double sqrt(double num) {
         double curr{num};
         double prev{0};
 
-        for (int i{}; i < 15; ++i) {
+        for (std::size_t i{}; i < 15; ++i) {
             prev = curr;
             curr = 0.5 * (curr + num / curr);
 
@@ -21,12 +19,12 @@ namespace math::utils {
         return curr;
     }
 
-    constexpr double constexprCbrt(double num) {
+    constexpr double cbrt(double num) {
         double absNum{num < 0.0 ? -num : num};
         double curr{num}; // TODO: Test with negative num, if it breaks replace num with absNum here
         double prev{0};
 
-        for (int i{}; i < 20; ++i) {
+        for (std::size_t i{}; i < 20; ++i) {
             prev = curr;
             curr = (2.0 * curr + absNum / (curr * curr)) / 3.0;
 
