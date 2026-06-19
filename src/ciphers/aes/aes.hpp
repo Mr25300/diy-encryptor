@@ -4,18 +4,21 @@
 #include "substitution_box.hpp"
 #include "key_schedule.hpp"
 
+#include <ciphers/block.hpp>
 #include <ciphers/block_cipher.hpp>
+#include <math/matrix.hpp>
+
+#include <cassert>
 
 namespace ciphers::aes {
-    class AES : ciphers::BlockCipher<constants::blockSize> {
+    class AES : public ciphers::BlockCipher<constants::blockSize> {
         const SubstitutionBox& subBox;
         const KeySchedule& keySchedule;
-        const MixColsMatrix& mixColsMat;
 
     public:
-        constexpr AES(const SubstitutionBox& subBox, const KeySchedule& keySchedule, const MixColsMatrix& mixColsMat) : subBox{subBox}, keySchedule{keySchedule}, mixColsMat{mixColsMat} {}
+        AES(const SubstitutionBox& subBox, const KeySchedule& keySchedule) : subBox{subBox}, keySchedule{keySchedule} {}
 
-        void encrypt(std::array<std::uint8_t, constants::blockSize>& block);
-        void decrypt(std::array<std::uint8_t, constants::blockSize>& block);
+        void encrypt(ciphers::Block<constants::blockSize>& block) const;
+        void decrypt(ciphers::Block<constants::blockSize>& block) const;
     };
 }

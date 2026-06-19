@@ -1,8 +1,39 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <array>
 
 namespace math::utils {
+    template <std::size_t N>
+    static constexpr std::array<unsigned int, N> getPrimes() {
+        std::array<unsigned int, N> primes{};
+
+        size_t count{};
+        unsigned int current{2};
+
+        while (count < N) {
+            bool isPrime = true;
+
+            for (std::size_t i{2}; i * i <= current; i++) {
+                if (current % i == 0) {
+                    isPrime = false;
+
+                    break;
+                }
+            }
+
+            if (isPrime) {
+                primes[count] = current;
+                count += 1;
+            }
+
+            current += 1;
+        }
+
+        return primes;
+    }
+
     constexpr double sqrt(double num) {
         double curr{num};
         double prev{0};
@@ -34,5 +65,11 @@ namespace math::utils {
         }
 
         return curr;
+    }
+
+    constexpr uint32_t getFractionalBits(double x) {
+        double frac{x - static_cast<std::uint64_t>(x)};
+
+        return static_cast<uint32_t>(frac * (1ULL << 32));
     }
 }

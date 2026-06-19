@@ -1,10 +1,8 @@
-#include <cstdint>
-#include <array>
+#pragma once
+
+#include "block.hpp"
 
 namespace ciphers {
-    template <std::size_t Size>
-    using Block = std::array<std::uint8_t, Size>;
-
     template <std::size_t BlockSize>
     struct BlockCipher {
         virtual void encrypt(Block<BlockSize>& block) const = 0;

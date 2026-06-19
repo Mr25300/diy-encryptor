@@ -1,8 +1,5 @@
 #pragma once
 
-#include <array>
-#include <ostream>
-
 #include "types.hpp"
 #include "substitution_box.hpp"
 
@@ -10,11 +7,13 @@
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
 
+#include <array>
+#include <ostream>
+
 namespace ciphers::aes {
     class KeySchedule {
         const SubstitutionBox& subBox;
 
-        std::array<math::GF256, constants::rounds> roundConstants;
         std::array<StateBlock, constants::rounds + 1> roundKeys;
 
         Word& getWord(std::size_t wordInd) {
@@ -22,15 +21,7 @@ namespace ciphers::aes {
         }
 
     public:
-        constexpr KeySchedule(const SubstitutionBox& subBox) : subBox{subBox} {
-            math::GF256 constant{1};
-            math::GF256 two{2};
-
-            for (std::size_t i{}; i < constants::rounds; ++i) {
-                this->roundConstants[i] = constant;
-                constant *= two;
-            }
-        }
+        KeySchedule(const SubstitutionBox& subBox) : subBox{subBox} {}
 
         const StateBlock& operator[](std::size_t round) const { return roundKeys[round]; }
 

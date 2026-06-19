@@ -1,10 +1,10 @@
 #pragma once
 
+#include "types.hpp"
+#include "substitution_box.hpp"
+
 #include <cstdint>
 #include <array>
-
-#include "substitution_box.hpp"
-#include "types.hpp"
 
 namespace ciphers::aes::utils {
     void rotWord(Word& word, bool invDir = false);

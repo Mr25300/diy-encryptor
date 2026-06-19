@@ -1,9 +1,21 @@
 #include "aes.hpp"
+
 #include "types.hpp"
 #include "utils.hpp"
 
 namespace ciphers::aes {
-    void AES::encrypt(std::array<std::uint8_t, constants::blockSize>& block) {
+    constexpr MixColsMatrix mixColsMat{MixColsMatrix::getCirculantMatrix(
+        math::Vector<math::GF256, constants::rows>({2, 3, 1, 1})
+    )};
+
+    constexpr MixColsMatrix mixColsMatInv{[] {
+        auto invRes{mixColsMat.getInverse<constants::rows>()};
+        assert(!invRes.isSingular && "AES MixCols Matrix must be invertible!");
+
+        return invRes.mat;
+    }()};
+
+    void AES::encrypt(std::array<std::uint8_t, constants::blockSize>& block) const {
         StateBlock aesBlock{utils::bytesToBlock<constants::cols>(block)};
 
         utils::addKey(aesBlock, this->keySchedule[0]);
@@ -12,7 +24,7 @@ namespace ciphers::aes {
             utils::subBytes(aesBlock, this->subBox);
             utils::shiftRows(aesBlock);
 
-            if (i != constants::rounds) utils::mixColumns(aesBlock, this->mixColsMat);
+            if (i != constants::rounds) utils::mixColumns(aesBlock, mixColsMat);
 
             utils::addKey(aesBlock, keySchedule[i]);
         }
@@ -20,13 +32,13 @@ namespace ciphers::aes {
         utils::blockToBytes(aesBlock, block);
     }
 
-    void AES::decrypt(std::array<std::uint8_t, constants::blockSize>& block) {
+    void AES::decrypt(std::array<std::uint8_t, constants::blockSize>& block) const {
         StateBlock aesBlock{utils::bytesToBlock<constants::cols>(block)};
 
         for (std::size_t i{constants::rounds}; i >= 1; --i) {
             utils::addKey(aesBlock, keySchedule[i]);
 
-            if (i != constants::rounds) utils::mixColumns(aesBlock, this->mixColsMat);
+            if (i != constants::rounds) utils::mixColumns(aesBlock, mixColsMatInv);
 
             utils::shiftRows(aesBlock, true);
             utils::subBytes(aesBlock, this->subBox, true);

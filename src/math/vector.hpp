@@ -1,9 +1,9 @@
 #pragma once
 
-#include <ostream>
-
 #include <math/gf256.hpp>
 #include <math/utils.hpp>
+
+#include <ostream>
 
 namespace math {
     template <typename T, std::size_t Size>

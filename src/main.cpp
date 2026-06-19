@@ -2,89 +2,68 @@
 #include <fstream>
 #include <filesystem>
 #include <string>
-#include <array>
 #include <ostream>
 #include <random>
 
-#include <math/gf256.hpp>
-#include <math/word.hpp>
-#include <math/matrix.hpp>
-#include <aes/block.hpp>
-#include <modes/cbc.hpp>
-#include <aes/key_schedule.hpp>
-#include <aes/substitution_box.hpp>
+#include <hashes/sha256.hpp>
+#include <prfs/hmac.hpp>
+#include <kdfs/pbkdf2.hpp>
 
-#include <hash/sha256.hpp>
-#include <prf/hmac.hpp>
-#include <kdf/pbkdf2.hpp>
+#include <ciphers/aes/substitution_box.hpp>
+#include <ciphers/aes/key_schedule.hpp>
+#include <ciphers/aes/aes.hpp>
 
-constexpr size_t cols = 4;
-constexpr size_t rows = 4;
-constexpr size_t blockSize = cols * rows;
-
-constexpr size_t keyWordCount = 4; // 4, 6, 8
-constexpr size_t keySize = keyWordCount * rows;
-
-constexpr size_t rounds = 10; // 10, 12, 14
+#include <padding/pkcs7.hpp>
+#include <ciphers/modes/cbc.hpp>
 
 constexpr int kdfIterations{6000}; // Should be 600000
 
-constexpr std::array<math::GF256, rounds> roundConstants = []() constexpr {
-    std::array<math::GF256, rounds> constants{};
-    math::GF256 constant = 1;
+constexpr hashes::SHA256 sha256{};
+constexpr prfs::HMAC hmac{sha256};
+constexpr kdfs::PBKDF2 pbkdf2{hmac, kdfIterations};
 
-    for (int i = 0; i < rounds; i++) {
-        constants[i] = constant;
-        constant *= 2;
-    }
+constexpr ciphers::aes::SubstitutionBox subBox;
+constexpr ciphers::aes::KeySchedule keySchedule{subBox};
+constexpr ciphers::aes::AES aesCipher{subBox, keySchedule};
 
-    return constants;
-}();
-
-constexpr SubstitutionBox subBox;
-
-constexpr math::Matrix<rows> mixColMatrix = math::Matrix<rows>::createCirculantMatrix(math::Word<rows>({2, 3, 1, 1}));
-constexpr math::Matrix<rows> mixColMatrixInv = mixColMatrix.inverse();
-
-constexpr SHA256 sha256{};
-constexpr HMAC hmac{sha256};
-constexpr PBKDF2 pbkdf2{hmac, kdfIterations};
+constexpr padding::PKCS7<ciphers::aes::constants::blockSize> padder{};
+constexpr ciphers::modes::CBC cbcCipher{padder, aesCipher};
 
 const std::string encryptedExtension = ".enc";
 const std::string decryptedExtension = ".dec";
 const std::string metadataExtension = ".enc.meta"; // Change to ".enc.meta" for storing salt from PBKDF2
 
-std::string generateIV(size_t length) {
+std::vector<std::uint8_t> generateIV(std::size_t length) {
     std::mt19937 gen(std::random_device{}());
     std::uniform_int_distribution<> dist(0, 255);
 
-    std::string iv(length, '\0');
+    std::vector<std::uint8_t> iv(length, '\0');
 
-    for (size_t i = 0; i < length; i++) {
-        iv[i] = static_cast<char>(dist(gen));
+    for (std::size_t i{}; i < length; ++i) {
+        iv[i] = dist(gen);
     }
 
     return iv;
 }
 
-std::string readFile(const std::filesystem::path& filePath) {
+std::vector<std::uint8_t> readFile(const std::filesystem::path& filePath) {
     std::ifstream inFile(filePath, std::ios::binary | std::ios::ate);
 
     if (!inFile) {
         throw std::ios_base::failure("Failed to read from file: " + filePath.string());
     }
 
-    std::streamsize fileSize = inFile.tellg();
+    std::streamsize fileSize{inFile.tellg()};
     inFile.seekg(0);
 
-    std::string fileData(fileSize, '\0');
-    inFile.read(fileData.data(), fileSize);
+    std::vector<std::uint8_t> fileData(fileSize);
+    inFile.read(reinterpret_cast<char*>(fileData.data()), fileSize);
     inFile.close();
 
     return fileData;
 }
 
-void writeToFile(const std::filesystem::path& filePath, const std::string& data) {
+void writeToFile(const std::filesystem::path& filePath, const std::vector<std::uint8_t>& data) {
     std::ofstream outFile(filePath, std::ios::binary);
 
     if (!outFile) {
@@ -92,7 +71,7 @@ void writeToFile(const std::filesystem::path& filePath, const std::string& data)
     }
 
     outFile.seekp(0);
-    outFile.write(data.data(), data.size());
+    outFile.write(reinterpret_cast<const char*>(data.data()), data.size());
     outFile.close();
 }
 
@@ -105,10 +84,6 @@ void deleteFile(const std::filesystem::path& filePath) {
 enum EncryptionMode { ENCRYPT, DECRYPT, UNDEFINED };
 
 int main(int argc, char *argv[]) {
-    if (mixColMatrixInv.isSingular()) { // Make this a static_assert
-        throw std::runtime_error("Mix columns matrix is singular, no inverse exists.");
-    }
-
     std::string prevArg;
     std::string filePathStr;
     std::string outputDirStr;
@@ -139,7 +114,7 @@ int main(int argc, char *argv[]) {
     std::filesystem::path inputPath(filePathStr); // Make sure this exists first before doing stuff below
     std::filesystem::path outputPath;
     std::filesystem::path metadataPath;
-    std::string initVecStr;
+    std::vector<std::uint8_t> iv;
 
     if (outputDirStr.empty()) {
         outputPath = inputPath;
@@ -158,7 +133,7 @@ int main(int argc, char *argv[]) {
             metadataPath += metadataExtension;
         }
 
-        initVecStr = generateIV(blockSize);
+        iv = generateIV();
 
     } else if (encryptionMode == DECRYPT) {
         if (inputPath.extension() == encryptedExtension) {
@@ -169,16 +144,20 @@ int main(int argc, char *argv[]) {
             metadataPath += metadataExtension;
         }
 
-        initVecStr = readFile(metadataPath);
+        iv = readFile(metadataPath);
     }
 
-    std::string inputData = readFile(inputPath);
+    std::vector<std::uint8_t> data{readFile(inputPath)};
 
-    std::string password;
-    std::cout << (encryptionMode == ENCRYPT ? "Encrypting" : "Decrypting") << " file, input password key: ";
-    std::cin >> password;
+    std::string passwordStr;
+    std::cout << (encryptionMode == ENCRYPT ? "Encrypting" : "Decrypting")
+        << " file, input password key: ";
+    std::cin >> passwordStr;
 
-    std::vector<std::uint8_t> passwordBytes(password.begin(), password.end());
+    std::vector<std::uint8_t> password(passwordStr.begin(), passwordStr.end());
+
+    keySchedule.generate(password);
+
     std::vector<std::uint8_t> keyBytes{pbkdf2.compute(passwordBytes, {}, keySize)}; // TODO: Add password salt to file
     std::vector<std::uint8_t> initVecBytes(initVecStr.begin(), initVecStr.end());
 

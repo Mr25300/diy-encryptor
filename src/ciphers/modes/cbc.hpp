@@ -1,23 +1,24 @@
 #pragma once
 
+#include <padding/padding_scheme.hpp>
+#include <ciphers/block.hpp>
+#include <ciphers/block_cipher.hpp>
+
 #include <cstddef>
 #include <vector>
-
-#include <padding/padding_scheme.hpp>
-#include <ciphers/block_cipher.hpp>
 
 namespace ciphers::modes {
     template <std::size_t BlockSize>
     class CBC {
         const padding::PaddingScheme<BlockSize>& padder;
         const ciphers::BlockCipher<BlockSize>& cipher;
-        const ciphers::Block<BlockSize>& iv;
+        ciphers::Block<BlockSize> iv;
 
     public:
-        constexpr CBC(const padding::PaddingScheme<BlockSize>& padder, const ciphers::BlockCipher<BlockSize>& cipher, const ciphers::Block<BlockSize>& iv) : padder{padder}, cipher{cipher}, iv{iv} {}
+        CBC(const padding::PaddingScheme<BlockSize>& padder, const ciphers::BlockCipher<BlockSize>& cipher, const ciphers::Block<BlockSize>& iv) : padder{padder}, cipher{cipher}, iv{iv} {}
 
-        void encrypt(std::vector<std::uint8_t> input) const;
-        bool decrypt(std::vector<std::uint8_t> output) const;
+        void encrypt(std::vector<std::uint8_t>& input) const;
+        bool decrypt(std::vector<std::uint8_t>& input) const;
 
     //     CBC(const std::string& text, bool encrypted) {
     //         size_t blockSize = cols * rows;

@@ -1,14 +1,14 @@
 #pragma once
 
-#include <cstddef>
-#include <array>
-#include <ostream>
-
 #include "constants.hpp"
 
 #include <math/gf256.hpp>
 #include <math/vector.hpp>
 #include <math/matrix.hpp>
+
+#include <cstddef>
+#include <array>
+#include <ostream>
 
 namespace ciphers::aes {
     using Word = math::Vector<math::GF256, constants::rows>;

@@ -1,42 +1,64 @@
+#include "sha256.hpp"
+
 #include <span>
 #include <algorithm>
 
-#include "sha256.hpp"
+namespace {
+    struct SHA256Values {
+        std::array<std::uint32_t, 8> h;
+        std::array<std::uint32_t, 64> k;
+    };
 
-static std::uint32_t rightRot(std::uint32_t word, std::uint32_t amount) {
-    if (amount == 0) return word;
+    std::uint32_t rightRot(std::uint32_t word, std::uint32_t amount) {
+        if (amount == 0) return word;
 
-    amount &= 31;
+        amount &= 31;
 
-    return word >> amount | word << (32 - amount);
+        return word >> amount | word << (32 - amount);
+    }
+
+    std::uint32_t ch(std::uint32_t x, std::uint32_t y, std::uint32_t z) {
+        return (x & y) ^ (~x & z);
+    }
+    std::uint32_t maj(std::uint32_t x, std::uint32_t y, std::uint32_t z) {
+        return (x & y) ^ (x & z) ^ (y & z);
+    }
+
+    std::uint32_t sum0(std::uint32_t x) {
+        return rightRot(x, 2) ^ rightRot(x, 13) ^ rightRot(x, 22);
+    }
+
+    std::uint32_t sum1(std::uint32_t x) {
+        return rightRot(x, 6) ^ rightRot(x, 11) ^ rightRot(x, 25);
+    }
+
+    std::uint32_t sigma0(std::uint32_t x) {
+        return rightRot(x, 7) ^ rightRot(x, 18) ^ (x >> 3);
+    }
+
+    std::uint32_t sigma1(std::uint32_t x) {
+        return rightRot(x, 17) ^ rightRot(x, 19) ^ (x >> 10);
+    }
 }
 
-static std::uint32_t ch(std::uint32_t x, std::uint32_t y, std::uint32_t z) {
-    return (x & y) ^ (~x & z);
-}
+constexpr SHA256Values vals{[] {
+    SHA256Values vals;
 
-static std::uint32_t maj(std::uint32_t x, std::uint32_t y, std::uint32_t z) {
-    return (x & y) ^ (x & z) ^ (y & z);
-}
+    std::array<unsigned int, 64> primes{math::utils::getPrimes<64>()};
 
-static std::uint32_t sum0(std::uint32_t x) {
-    return rightRot(x, 2) ^ rightRot(x, 13) ^ rightRot(x, 22);
-}
+    for (std::size_t i{}; i < 8; ++i) {
+        vals.h[i] = math::utils::getFractionalBits(math::utils::sqrt(primes[i]));
+    }
 
-static std::uint32_t sum1(std::uint32_t x) {
-    return rightRot(x, 6) ^ rightRot(x, 11) ^ rightRot(x, 25);
-}
+    for (std::size_t i{}; i < 64; ++i) {
+        vals.k[i] = math::utils::getFractionalBits(math::utils::cbrt(primes[i]));
+    }
 
-static std::uint32_t sigma0(std::uint32_t x) {
-    return rightRot(x, 7) ^ rightRot(x, 18) ^ (x >> 3);
-}
+    return vals;
+}()};
 
-static std::uint32_t sigma1(std::uint32_t x) {
-    return rightRot(x, 17) ^ rightRot(x, 19) ^ (x >> 10);
-}
-
-std::vector<std::uint8_t> SHA256::compute(const std::vector<std::uint8_t>& input) const {
-    std::array<std::uint32_t, 8> hCopy{hVals};
+std::vector<std::uint8_t> hashes::SHA256::compute(const std::vector<std::uint8_t>& input) const {
+    std::array<std::uint32_t, 8> hCopy{vals.h};
 
     std::vector<std::array<std::uint32_t, 16>> chunks;
     std::size_t inputWords{(input.size() >> 2) + 1}; // Divide by 4 and add an extra 1
@@ -85,7 +107,7 @@ std::vector<std::uint8_t> SHA256::compute(const std::vector<std::uint8_t>& input
 
         for (std::size_t i{}; i < 64; ++i) {
             uint32_t temp1{hVars[7] + sum1(hVars[4]) + ch(hVars[4], hVars[5], hVars[6])
-                + kVals[i] + w[i]};
+                + vals.k[i] + w[i]};
             uint32_t temp2{sum0(hVars[0]) + maj(hVars[0], hVars[1], hVars[2])};
 
             hVars[7] = hVars[6];

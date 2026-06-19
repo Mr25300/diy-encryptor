@@ -2,7 +2,7 @@
 
 namespace padding {
     template <std::size_t BlockSize>
-    void PKCS7<BlockSize>::pad(std::vector<std::uint8_t>& input) {
+    void PKCS7<BlockSize>::pad(std::vector<std::uint8_t>& input) const {
         std::size_t padLength{BlockSize - input.size() % BlockSize};
 
         input.reserve(input.size() + padLength);
@@ -13,7 +13,7 @@ namespace padding {
     }
 
     template <std::size_t BlockSize>
-    bool PKCS7<BlockSize>::unpad(std::vector<std::uint8_t>& input) {
+    bool PKCS7<BlockSize>::unpad(std::vector<std::uint8_t>& input) const {
         std::uint8_t padLength{input.back()};
 
         if (padLength == 0 || padLength > BlockSize || padLength > input.size())

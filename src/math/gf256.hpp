@@ -52,8 +52,10 @@ namespace math {
             while (dividendDeg >= divisorDeg) {
                 std::size_t degDiff{dividendDeg - divisorDeg};
 
-                dividend ^= divisor << degDiff;
-                quotient ^= 1 << degDiff;
+                if (degDiff >= 16) break;
+
+                dividend ^= static_cast<std::uint16_t>(divisor << degDiff);
+                quotient ^= static_cast<std::uint8_t>(1U << degDiff);
 
                 dividendDeg = gfGetDegree(dividend);
             }
@@ -81,7 +83,7 @@ namespace math {
         std::uint8_t value{};
 
         constexpr GF256() = default;
-        constexpr GF256(uint8_t v) : value(v) {}
+        constexpr GF256(uint8_t v) : value{v} {}
 
         constexpr GF256 operator-() const {
             return *this;

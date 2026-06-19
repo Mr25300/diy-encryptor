@@ -1,7 +1,23 @@
 #include "key_schedule.hpp"
+
 #include "utils.hpp"
 
 namespace ciphers::aes {
+    // Internal linkage by default
+    constexpr std::array<math::GF256, ciphers::aes::constants::rounds> roundConstants{[] {
+        std::array<math::GF256, ciphers::aes::constants::rounds> constants;
+
+        math::GF256 constant{1};
+        math::GF256 two{2};
+
+        for (std::size_t i{}; i < ciphers::aes::constants::rounds; ++i) {
+            constants[i] = constant;
+            constant *= two;
+        }
+
+        return constants;
+    }()};
+
     void KeySchedule::generate(const std::array<std::uint8_t, constants::keySize>& key) {
         KeyBlock keyBlock{utils::bytesToBlock<constants::keyCols>(key)};
         std::size_t wordCount{(constants::rounds + 1) * constants::cols};
@@ -12,7 +28,6 @@ namespace ciphers::aes {
         }
 
         for (; wordInd < wordCount; ++wordInd) {
-            Word& word{this->getWord(wordInd)};
             Word& aboveWord{this->getWord(wordInd - constants::keyCols)};
             Word intermediateWord{this->getWord(wordInd - 1)};
 
@@ -22,7 +37,7 @@ namespace ciphers::aes {
                 utils::applyConstant(intermediateWord, roundConstants[wordInd / constants::keyCols - 1]);
             }
 
-            word = aboveWord + intermediateWord;
+            this->getWord(wordInd) = aboveWord + intermediateWord;
         }
     }
 
@@ -36,4 +51,3 @@ namespace ciphers::aes {
         return stream;
     }
 }
-

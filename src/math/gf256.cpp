@@ -1,6 +1,6 @@
-#include <bitset>
-
 #include "gf256.hpp"
+
+#include <bitset>
 
 void math::GF256::print(std::ostream& stream, GFFormat format) const {
     switch(format) {

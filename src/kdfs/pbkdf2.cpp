@@ -1,9 +1,9 @@
+#include "pbkdf2.hpp"
+
 #include <limits>
 #include <stdexcept>
 
-#include "pbkdf2.hpp"
-
-std::vector<uint8_t> PBKDF2::compute(const std::vector<uint8_t>& key, const std::vector<uint8_t>& salt, std::size_t dKeySize) const {
+std::vector<uint8_t> kdfs::PBKDF2::compute(const std::vector<uint8_t>& key, const std::vector<uint8_t>& salt, std::size_t dKeySize) const {
     if (dKeySize == 0) {
         throw std::invalid_argument("Derived key size must be greater than 0.");
     }
@@ -30,7 +30,7 @@ std::vector<uint8_t> PBKDF2::compute(const std::vector<uint8_t>& key, const std:
         std::vector<std::uint8_t>& tVal{tVals[i - 1]};
         tVal.assign(hLen, 0);
 
-        for (int j{}; j < iterations; ++j) {
+        for (int j{}; j < iters; ++j) {
             if (j == 0) {
                 for (int k{}; k < 4; ++k) {
                     saltAndI[salt.size() + k] = static_cast<std::uint8_t>(i >> (3 - k) * 8);
