@@ -10,6 +10,7 @@ namespace ciphers {
     template <std::size_t Size>
     using Block = std::array<std::uint8_t, Size>;
 
+    // TODO: Remove (bad idea, replace with explicit functions)
     template <std::size_t Size>
     Block<Size> operator^(const Block<Size>& block1, const Block<Size>& block2);
     template <std::size_t Size>

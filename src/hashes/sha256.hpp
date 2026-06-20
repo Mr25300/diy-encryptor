@@ -2,8 +2,6 @@
 
 #include "hash.hpp"
 
-#include <math/utils.hpp>
-
 #include <vector>
 #include <cstdint>
 

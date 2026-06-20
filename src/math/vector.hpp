@@ -1,7 +1,6 @@
 #pragma once
 
 #include <math/gf256.hpp>
-#include <math/utils.hpp>
 
 #include <ostream>
 

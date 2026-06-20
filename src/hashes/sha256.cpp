@@ -9,6 +9,93 @@ namespace {
         std::array<std::uint32_t, 64> k;
     };
 
+    template <std::size_t N>
+    constexpr std::array<unsigned int, N> getPrimes() {
+        std::array<unsigned int, N> primes{};
+
+        size_t count{};
+        unsigned int current{2};
+
+        while (count < N) {
+            bool isPrime = true;
+
+            for (std::size_t i{2}; i * i <= current; i++) {
+                if (current % i == 0) {
+                    isPrime = false;
+
+                    break;
+                }
+            }
+
+            if (isPrime) {
+                primes[count] = current;
+                count += 1;
+            }
+
+            current += 1;
+        }
+
+        return primes;
+    }
+
+    constexpr double sqrt(double num) {
+        double curr{num};
+        double prev{};
+
+        // Mathematical minimum for accuracy to 32nd fractional binary digit up to 64th prime: 8
+        for (std::size_t i{}; i < 15; ++i) {
+            prev = curr;
+            curr = 0.5 * (curr + num / curr);
+
+            if (curr == prev) {
+                break;
+            }
+        }
+
+        return curr;
+    }
+
+    constexpr double cbrt(double num) {
+        double curr{num};
+        double prev{};
+
+        // Mathematical minimum for accuracy to 32nd fractional binary digit up to 64th prime: 14
+        for (std::size_t i{}; i < 20; ++i) {
+            prev = curr;
+            curr = (2.0 * curr + num / (curr * curr)) / 3.0;
+
+            if (curr == prev) {
+                break;
+            }
+        }
+
+        return curr;
+    }
+
+    constexpr uint32_t getFractionalBits(double x) {
+        double frac{x - static_cast<std::uint64_t>(x)};
+
+        return static_cast<uint32_t>(frac * (1ULL << 32));
+    }
+}
+
+constexpr SHA256Values vals{[] {
+    SHA256Values vals{};
+
+    std::array<unsigned int, 64> primes{getPrimes<64>()};
+
+    for (std::size_t i{}; i < 8; ++i) {
+        vals.h[i] = getFractionalBits(sqrt(primes[i]));
+    }
+
+    for (std::size_t i{}; i < 64; ++i) {
+        vals.k[i] = getFractionalBits(cbrt(primes[i]));
+    }
+
+    return vals;
+}()};
+
+namespace {
     std::uint32_t rightRot(std::uint32_t word, std::uint32_t amount) {
         if (amount == 0) return word;
 
@@ -40,22 +127,6 @@ namespace {
         return rightRot(x, 17) ^ rightRot(x, 19) ^ (x >> 10);
     }
 }
-
-constexpr SHA256Values vals{[] {
-    SHA256Values vals;
-
-    std::array<unsigned int, 64> primes{math::utils::getPrimes<64>()};
-
-    for (std::size_t i{}; i < 8; ++i) {
-        vals.h[i] = math::utils::getFractionalBits(math::utils::sqrt(primes[i]));
-    }
-
-    for (std::size_t i{}; i < 64; ++i) {
-        vals.k[i] = math::utils::getFractionalBits(math::utils::cbrt(primes[i]));
-    }
-
-    return vals;
-}()};
 
 std::vector<std::uint8_t> hashes::SHA256::compute(const std::vector<std::uint8_t>& input) const {
     std::array<std::uint32_t, 8> hCopy{vals.h};
