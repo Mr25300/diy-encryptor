@@ -1,5 +1,6 @@
 #include <cstddef>
 
+// TODO: Setup constants to allow for different AES modes (with an enum or something)
 namespace ciphers::aes::constants {
     inline constexpr std::size_t cols{4};
     inline constexpr std::size_t rows{4};

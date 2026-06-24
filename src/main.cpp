@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     EncryptionMode encryptionMode = UNDEFINED;
     bool deletePrev = false;
 
-    for (int i{1}; i < argc; i++) {
+    for (std::size_t i{1}; i < argc; ++i) {
         char *arg = argv[i];
         std::string argStr = std::string(arg);
 
