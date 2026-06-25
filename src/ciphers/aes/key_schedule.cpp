@@ -3,7 +3,6 @@
 #include "utils.hpp"
 
 namespace ciphers::aes {
-    // Internal linkage by default
     constexpr std::array<math::GF256, ciphers::aes::constants::rounds> roundConstants{[] {
         std::array<math::GF256, ciphers::aes::constants::rounds> constants;
 

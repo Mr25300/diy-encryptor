@@ -2,28 +2,29 @@
 
 #include <cstdint>
 #include <vector>
-#include <stdexcept>
 
 namespace bytes {
-    using Bytes = std::vector<std::uint8_t>;
+    template <std::size_t Size>
+    using ByteArr = std::array<std::uint8_t, Size>;
 
-    inline void xorBytes(Bytes& bytes1, const Bytes& bytes2) {
-        if (bytes1.size() != bytes2.size())
-            throw std::invalid_argument("Cannot XOR byte blocks of different lengths.");
+    using ByteVec = std::vector<std::uint8_t>;
 
-        for (std::size_t i{}; i < bytes1.size(); ++i) {
-            bytes1[i] ^= bytes2[i];
-        }
-    }
+    void xorBytes(ByteVec& bytes1, const ByteVec& bytes2);
+    ByteVec xorBytes(const ByteVec& bytes1, const ByteVec& bytes2);
 
-    inline void xorBytes(Bytes& bytes, std::uint8_t byte) {
-        for (std::size_t i{}; i < bytes.size(); ++i) {
-            bytes[i] ^= byte;
-        }
-    }
+    void xorBytes(ByteVec& bytes, std::uint8_t byte);
+    ByteVec xorBytes(const ByteVec& bytes, std::uint8_t byte);
 
-    inline void appendBytes(Bytes& bytes1, const Bytes& bytes2) {
-        bytes1.reserve(bytes1.size() + bytes2.size());
-        bytes1.insert(bytes1.end(), bytes2.begin(), bytes2.end());
-    }
+    template <std::size_t Size>
+    void xorBytes(ByteArr<Size>& bytes1, const ByteArr<Size>& bytes2);
+    template <std::size_t Size>
+    ByteArr<Size> xorBytes(const ByteArr<Size>& bytes1, const ByteArr<Size>& bytes2);
+
+    template <std::size_t Size>
+    void xorBytes(ByteArr<Size>& bytes, std::uint8_t byte);
+    template <std::size_t Size>
+    ByteArr<Size> xorBytes(ByteArr<Size>& bytes, std::uint8_t byte);
+
+    void appendBytes(ByteVec& bytes1, const ByteVec& bytes2);
+    ByteVec appendBytes(const ByteVec& bytes1, const ByteVec& bytes2);
 }
