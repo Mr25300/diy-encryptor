@@ -1,7 +1,6 @@
 #include "sha256.hpp"
 
-#include <span>
-#include <algorithm>
+#include <array>
 
 namespace {
     struct SHA256Values {
@@ -128,7 +127,7 @@ namespace {
     }
 }
 
-std::vector<std::uint8_t> hashes::SHA256::compute(const std::vector<std::uint8_t>& input) const {
+bytes::ByteArr<32> hashes::SHA256::compute(const bytes::ByteVec& input) const {
     std::array<std::uint32_t, 8> hCopy{vals.h};
 
     std::vector<std::array<std::uint32_t, 16>> chunks;
@@ -167,8 +166,7 @@ std::vector<std::uint8_t> hashes::SHA256::compute(const std::vector<std::uint8_t
 
     for (const std::array<std::uint32_t, 16>& chunk : chunks) {
         std::array<std::uint32_t, 64> w{}; // Message schedule
-        std::span<std::uint32_t, 16> firstPart(w.data(), 16);
-        std::ranges::copy(chunk, firstPart.begin());
+        std::copy(chunk.begin(), chunk.end(), w.begin());
 
         for (std::size_t i{16}; i < 64; ++i) {
             w[i] = w[i - 16] + sigma0(w[i - 15]) + w[i - 7] + sigma1(w[i - 2]);
@@ -196,7 +194,7 @@ std::vector<std::uint8_t> hashes::SHA256::compute(const std::vector<std::uint8_t
         }
     }
 
-    std::vector<std::uint8_t> output(32);
+    bytes::ByteArr<32> output{};
 
     for (int i{}; i < 8; ++i) {
         std::uint32_t word{hCopy[i]};

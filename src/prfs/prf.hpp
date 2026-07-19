@@ -1,11 +1,14 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
+#include <utils/bytes.hpp>
+
+#include <cstddef>
 
 namespace prfs {
+    template <std::size_t OutputSize>
     struct PRF {
-        virtual std::vector<std::uint8_t> compute(const std::vector<std::uint8_t>& key, const std::vector<std::uint8_t>& text) const = 0;
-        virtual std::size_t outputSize() const = 0;
+        virtual bytes::ByteArr<OutputSize> compute(const bytes::ByteVec& key, const bytes::ByteVec& text) const = 0;
+
+        virtual std::size_t outputSize() const { return OutputSize; }
     };
 }

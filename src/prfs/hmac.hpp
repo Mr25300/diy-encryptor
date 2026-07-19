@@ -3,13 +3,15 @@
 #include "prf.hpp"
 
 #include <hashes/hash.hpp>
+#include <utils/bytes.hpp>
 
 #include <cstddef>
 
 namespace prfs {
-    class HMAC : public PRF {
+    template <std::size_t OutputSize>
+    class HMAC : public PRF<OutputSize> {
     private:
-        const hashes::Hash& hash;
+        const hashes::Hash& hash<[ANY], OutputSize>;
 
         static constexpr std::uint8_t ipad{0x36};
         static constexpr std::uint8_t opad{0x5C};
@@ -17,8 +19,6 @@ namespace prfs {
     public:
         HMAC(const hashes::Hash& hash) : hash{hash} {}
 
-        std::vector<std::uint8_t> compute(const std::vector<std::uint8_t>& key, const std::vector<std::uint8_t>& text) const;
-
-        size_t outputSize() const { return hash.outputSize(); }
+        bytes::ByteArr<OutputSize> compute(const bytes::ByteVec& key, const bytes::ByteVec& text) const;
     };
 }

@@ -1,5 +1,5 @@
 CXX := g++
-CXXFLAGS := -std=c++20 -Isrc
+CXXFLAGS := -std=c++17 -Isrc
 
 BUILD_DIR := build
 TARGET := $(BUILD_DIR)/diy-encryptor

@@ -1,13 +1,16 @@
 #pragma once
 
-#include <vector>
-#include <cstdint>
+#include <utils/bytes.hpp>
+
+#include <cstddef>
 
 namespace hashes {
+    template <std::size_t BlockSize, std::size_t OutputSize>
     class Hash {
     public:
-        virtual std::vector<std::uint8_t> compute(const std::vector<std::uint8_t>& input) const = 0;
-        virtual std::size_t blockSize() const = 0;
-        virtual std::size_t outputSize() const = 0;
+        virtual bytes::ByteArr<OutputSize> compute(const bytes::ByteVec& input) const = 0;
+
+        std::size_t blockSize() const { return BlockSize; }
+        std::size_t outputSize() const { return OutputSize; }
     };
 }
