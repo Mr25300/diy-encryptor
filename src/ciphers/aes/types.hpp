@@ -16,9 +16,12 @@ namespace ciphers::aes {
 
     template <std::size_t Cols>
     using Block = std::array<Word, Cols>;
+
     using StateBlock = Block<constants::cols>;
-    using KeyBlock = Block<constants::keyCols>;
+
+    template <typename Pol>
+    using KeyBlock = Block<Pol::keyCols>;
 
     template <std::size_t Cols>
-    std::ostream& operator<<(std::ostream& stream, const Block<Cols>& block); // Maybe use inline and for other functions too
+    std::ostream& operator<<(std::ostream& stream, const Block<Cols>& block); // TODO: maybe use inline and for other functions too
 }

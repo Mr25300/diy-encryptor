@@ -1,12 +1,18 @@
 #pragma once
 
-#include <cstdint>
-#include <vector>
+#include <utils/bytes.hpp>
+
+#include <cstddef>
 
 namespace padding {
-    template <std::size_t BlockSize>
-    struct PaddingScheme {
-        virtual void pad(std::vector<std::uint8_t>& input) const = 0;
-        virtual bool unpad(std::vector<std::uint8_t>& input) const = 0;
+    class PaddingScheme {
+    protected:
+        const std::size_t blockSize;
+
+    public:
+        constexpr PaddingScheme(std::size_t blockSize) : blockSize{blockSize} {}
+
+        virtual void pad(bytes::ByteVec& input) const = 0;
+        virtual bool unpad(bytes::ByteVec& input) const = 0;
     };
 }

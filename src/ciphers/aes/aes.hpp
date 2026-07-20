@@ -1,24 +1,24 @@
 #pragma once
 
-#include "types.hpp"
 #include "substitution_box.hpp"
 #include "key_schedule.hpp"
 
-#include <ciphers/block.hpp>
 #include <ciphers/block_cipher.hpp>
 #include <math/matrix.hpp>
+#include <utils/bytes.hpp>
 
 #include <cassert>
 
 namespace ciphers::aes {
+    template <typename Pol>
     class AES : public ciphers::BlockCipher<constants::blockSize> {
         const SubstitutionBox& subBox;
-        const KeySchedule& keySchedule;
+        const KeySchedule<Pol>& keySchedule;
 
     public:
-        AES(const SubstitutionBox& subBox, const KeySchedule& keySchedule) : subBox{subBox}, keySchedule{keySchedule} {}
+        AES(const SubstitutionBox& subBox, const KeySchedule<Pol>& keySchedule) : subBox{subBox}, keySchedule{keySchedule} {}
 
-        void encrypt(ciphers::Block<constants::blockSize>& block) const;
-        void decrypt(ciphers::Block<constants::blockSize>& block) const;
+        void encrypt(bytes::ByteArr<constants::blockSize>& block) const;
+        void decrypt(bytes::ByteArr<constants::blockSize>& block) const;
     };
 }

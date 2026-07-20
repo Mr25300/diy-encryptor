@@ -1,3 +1,4 @@
+- Go through all TODOs
 - Switch to C++17 (don't use span or things like that)
 - Make crypto utils for things like using Bytes = (vector of uint8_ts) and xorBytes and appendBytes methods (then use in HMAC, SHA256 and BlockCipher stuff)
 - Remove occurences of std::array and replace with std::vector to make it runtime compatible (possibly for Vector and Matrix as well)

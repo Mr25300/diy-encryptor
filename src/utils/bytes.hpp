@@ -27,4 +27,7 @@ namespace bytes {
 
     void appendBytes(ByteVec& bytes1, const ByteVec& bytes2);
     ByteVec appendBytes(const ByteVec& bytes1, const ByteVec& bytes2);
+
+    template <std::size_t Size>
+    std::vector<ByteArr<Size>> getChunks(const ByteVec& bytes);
 }

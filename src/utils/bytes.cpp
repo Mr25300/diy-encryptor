@@ -74,4 +74,20 @@ namespace bytes {
 
         return copy;
     }
+
+    template <std::size_t Size>
+    std::vector<ByteArr<Size>> getChunks(const ByteVec& bytes) {
+        std::vector<ByteArr<Size>> chunks{};
+
+        if (bytes.size() % Size != 0)
+            throw std::invalid_argument("Number of bytes must be a multiple of the chunk size.");
+
+        for (std::size_t i{}; i < bytes.size() / Size; ++i) {
+            for (std::size_t j{}; j < Size; ++j) {
+                chunks[i][j] = bytes[i * Size + j];
+            }
+        }
+
+        return chunks;
+    }
 }

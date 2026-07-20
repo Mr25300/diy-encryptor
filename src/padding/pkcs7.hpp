@@ -2,13 +2,11 @@
 
 #include "padding_scheme.hpp"
 
-#include <cstdint>
-#include <vector>
+#include <utils/bytes.hpp>
 
 namespace padding {
-    template <std::size_t BlockSize>
-    struct PKCS7 : PaddingScheme<BlockSize> {
-        void pad(std::vector<std::uint8_t>& input) const;
-        bool unpad(std::vector<std::uint8_t>& input) const;
+    struct PKCS7 : PaddingScheme { // TODO: Make sure private methods stay private
+        void pad(bytes::ByteVec& input) const;
+        bool unpad(bytes::ByteVec& input) const;
     };
 }

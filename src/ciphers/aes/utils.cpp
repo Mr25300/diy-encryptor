@@ -3,7 +3,7 @@
 #include "types.hpp"
 
 #include <math/gf256.hpp>
-#include <math/utils.hpp>
+// #include <math/utils.hpp>
 
 namespace ciphers::aes::utils {
     void rotWord(Word& word, bool invDir) {
@@ -65,7 +65,7 @@ namespace ciphers::aes::utils {
     }
 
     void shiftRows(StateBlock& block, bool invDir) {
-        Block temp{block};
+        StateBlock temp{block};
 
         for (std::size_t i{}; i < constants::rows; ++i) {
             std::size_t modShift{i % constants::cols}; // Shifting by i is equivalent to i + cols

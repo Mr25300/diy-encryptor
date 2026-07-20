@@ -3,7 +3,7 @@
 #include <limits>
 #include <stdexcept>
 
-std::vector<uint8_t> kdfs::PBKDF2::compute(const std::vector<uint8_t>& key, const std::vector<uint8_t>& salt, std::size_t dKeySize) const {
+bytes::ByteVec kdfs::PBKDF2::compute(const bytes::ByteVec& key, const bytes::ByteVec& salt, std::size_t dKeySize) const {
     if (dKeySize == 0) {
         throw std::invalid_argument("Derived key size must be greater than 0.");
     }
@@ -18,16 +18,16 @@ std::vector<uint8_t> kdfs::PBKDF2::compute(const std::vector<uint8_t>& key, cons
     std::size_t len{(dKeySize + hLen - 1) / hLen};
     std::size_t remainder{dKeySize - (len - 1) * hLen};
 
-    std::vector<std::vector<std::uint8_t>> tVals(len);
+    std::vector<bytes::ByteVec> tVals(len);
 
-    std::vector<std::uint8_t> saltAndI{salt};
-    saltAndI.resize(salt.size() + 4);
+    bytes::ByteVec saltAndI{salt};
+    saltAndI.resize(salt.size() + 4); // TODO: See if reserve is better here
 
     std::vector<std::uint8_t> uVal;
     uVal.reserve(hLen);
 
     for (std::uint32_t i{1}; i <= len; ++i) {
-        std::vector<std::uint8_t>& tVal{tVals[i - 1]};
+        bytes::ByteVec& tVal{tVals[i - 1]};
         tVal.assign(hLen, 0);
 
         for (int j{}; j < iters; ++j) {
@@ -48,8 +48,7 @@ std::vector<uint8_t> kdfs::PBKDF2::compute(const std::vector<uint8_t>& key, cons
         }
     }
 
-    std::vector<std::uint8_t> dKey;
-    dKey.reserve(dKeySize);
+    bytes::ByteVec dKey(dKeySize);
 
     for (std::size_t i{}; i < len - 1; ++i) {
         dKey.insert(dKey.end(), tVals[i].begin(), tVals[i].end());
