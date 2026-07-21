@@ -5,11 +5,11 @@
 #include <cstddef>
 
 namespace hashes {
-    class Hash {
-    public:
-        virtual bytes::ByteVec compute(const bytes::ByteVec& input) const = 0;
+    template <std::size_t BlockSize, std::size_t OutputSize>
+    struct Hash {
+        static constexpr std::size_t blockSize{BlockSize};
+        static constexpr std::size_t outputSize{OutputSize};
 
-        virtual std::size_t blockSize() const = 0;
-        virtual std::size_t outputSize() const = 0;
+        virtual bytes::ByteArr<OutputSize> compute(const bytes::ByteVec& input) const = 0;
     };
 }

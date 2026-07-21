@@ -4,30 +4,28 @@
 #include <vector>
 
 namespace bytes {
-    template <std::size_t Size>
-    using ByteArr = std::array<std::uint8_t, Size>;
+    template <std::size_t N>
+    using ByteArr = std::array<std::uint8_t, N>;
 
     using ByteVec = std::vector<std::uint8_t>;
 
-    void xorBytes(ByteVec& bytes1, const ByteVec& bytes2);
-    ByteVec xorBytes(const ByteVec& bytes1, const ByteVec& bytes2);
+    template <typename C>
+    void xorBytes(C& bytes1, const C& bytes2);
+    template <typename C>
+    C getXorBytes(const C& bytes1, const C& bytes2);
 
-    void xorBytes(ByteVec& bytes, std::uint8_t byte);
-    ByteVec xorBytes(const ByteVec& bytes, std::uint8_t byte);
+    template <typename C>
+    void xorBytes(C& bytes, std::uint8_t byte);
+    template <typename C>
+    C getXorBytes(C& bytes, std::uint8_t byte);
 
-    template <std::size_t Size>
-    void xorBytes(ByteArr<Size>& bytes1, const ByteArr<Size>& bytes2);
-    template <std::size_t Size>
-    ByteArr<Size> xorBytes(const ByteArr<Size>& bytes1, const ByteArr<Size>& bytes2);
+    template <typename C>
+    void appendBytes(ByteVec& bytes1, const C& bytes2);
+    template <typename C1, typename C2>
+    ByteVec getAppendBytes(const C1& bytes1, const C2& bytes2);
+    template <std::size_t N1, std::size_t N2>
+    ByteArr<N1 + N2> getAppendBytesArr(const ByteArr<N1> bytes1, const ByteArr<N2> bytes2);
 
-    template <std::size_t Size>
-    void xorBytes(ByteArr<Size>& bytes, std::uint8_t byte);
-    template <std::size_t Size>
-    ByteArr<Size> xorBytes(ByteArr<Size>& bytes, std::uint8_t byte);
-
-    void appendBytes(ByteVec& bytes1, const ByteVec& bytes2);
-    ByteVec appendBytes(const ByteVec& bytes1, const ByteVec& bytes2);
-
-    template <std::size_t Size>
-    std::vector<ByteArr<Size>> getChunks(const ByteVec& bytes);
+    template <std::size_t N>
+    std::vector<ByteArr<N>> getChunks(const ByteVec& bytes);
 }

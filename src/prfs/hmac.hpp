@@ -5,21 +5,20 @@
 #include <hashes/hash.hpp>
 #include <utils/bytes.hpp>
 
-#include <cstddef>
+#include <cstdint>
 
 namespace prfs {
-    class HMAC : public PRF {
+    template <std::size_t BlockSize, std::size_t OutputSize>
+    class HMAC : public PRF<OutputSize> {
     private:
-        const hashes::Hash& hash;
+        const hashes::Hash<BlockSize, OutputSize>& hash;
 
         static constexpr std::uint8_t ipad{0x36};
         static constexpr std::uint8_t opad{0x5C};
 
     public:
-        HMAC(const hashes::Hash& hash) : hash{hash} {}
+        HMAC(const hashes::Hash<BlockSize, OutputSize>& hash) : hash{hash} {}
 
-        bytes::ByteVec compute(const bytes::ByteVec& key, const bytes::ByteVec& text) const;
-
-        std::size_t outputSize() { return hash.outputSize(); }
+        bytes::ByteArr<OutputSize> compute(const bytes::ByteVec& key, const bytes::ByteVec& text) const;
     };
 }

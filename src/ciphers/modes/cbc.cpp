@@ -11,7 +11,7 @@ namespace ciphers::modes {
         const bytes::ByteArr<BlockSize>* prevBlock{&(this->iv)};
 
         for (bytes::ByteArr<BlockSize>& block : blocks) {
-            bytes::xorBytes(block, *prevBlock);
+            bytes::getXorBytes(block, *prevBlock);
             this->cipher.encrypt(block);
 
             prevBlock = &block;
@@ -29,7 +29,7 @@ namespace ciphers::modes {
             bytes::ByteArr<BlockSize> currBlock{block};
 
             this->cipher.decrypt(block);
-            bytes::xorBytes(block, currBlock);
+            bytes::getXorBytes(block, currBlock);
 
             prevBlock = block;
         }

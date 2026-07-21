@@ -128,7 +128,7 @@ namespace {
 }
 
 namespace hashes {
-    bytes::ByteVec hashes::SHA256::compute(const bytes::ByteVec& input) const {
+    bytes::ByteArr<32> hashes::SHA256::compute(const bytes::ByteVec& input) const {
         std::array<std::uint32_t, 8> hCopy{vals.h};
 
         std::vector<std::array<std::uint32_t, 16>> chunks;
@@ -195,7 +195,7 @@ namespace hashes {
             }
         }
 
-        bytes::ByteVec output(32);
+        bytes::ByteArr<32> output;
 
         for (int i{}; i < 8; ++i) {
             std::uint32_t word{hCopy[i]};

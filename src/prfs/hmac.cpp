@@ -17,27 +17,27 @@
 //     }
 // }
 
-bytes::ByteVec prfs::HMAC::compute(const bytes::ByteVec& key, const bytes::ByteVec& text) const {
-    std::size_t blockSize{hash.blockSize()};
-    bytes::ByteVec workingKey;
+template <std::size_t BlockSize, std::size_t OutputSize>
+bytes::ByteArr<OutputSize> prfs::HMAC<BlockSize, OutputSize>::compute(const bytes::ByteVec& key, const bytes::ByteVec& text) const {
+    bytes::ByteArr<BlockSize> workingKey;
 
-    if (key.size() > blockSize) {
-        workingKey = hash.compute(key);
+    if (key.size() > BlockSize) {
+        bytes::ByteArr<OutputSize> hashedKey{hash.compute(key)};
+
+        std::copy(hashedKey.begin(), hashedKey.end(), workingKey.begin());
+        std::fill(workingKey.begin() + OutputSize, workingKey.end(), 0);
+
     } else {
-        workingKey = key;
+        std::copy(key.begin(), key.end(), workingKey.begin());
+        std::fill(workingKey.begin() + key.size(), workingKey.end(), 0);
     }
 
-    if (workingKey.size() < blockSize) {
-        workingKey.resize(blockSize, 0x00);
-    }
+    bytes::ByteArr<OutputSize> innerXor{bytes::getXorBytes(workingKey, ipad)};
+    bytes::ByteVec inner{bytes::getAppendBytes(innerXor, text)};
+    bytes::ByteArr<OutputSize> innerHash{hash.compute(inner)};
 
-    // TODO: Make sure static_cast to const type is correct
-    bytes::ByteVec inner{bytes::xorBytes(static_cast<const bytes::ByteVec>(workingKey), ipad)};
-    bytes::appendBytes(inner, text);
-
-    bytes::ByteVec innerHash{hash.compute(inner)};
-    bytes::ByteVec outer{bytes::xorBytes(static_cast<const bytes::ByteVec>(workingKey), opad)};
-    bytes::appendBytes(outer, innerHash);
+    bytes::ByteArr<OutputSize> outerXor{bytes::getXorBytes(workingKey, opad)};
+    bytes::ByteVec outer{bytes::getAppendBytes(outerXor, innerHash)};
 
     return hash.compute(outer);
 }
