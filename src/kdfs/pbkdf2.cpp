@@ -89,7 +89,7 @@ bytes::ByteArr<DKeySize> kdfs::PBKDF2<HLen, DKeySize>::compute(const bytes::Byte
                 uVal = prf.compute(key, saltAndI);
 
             } else {
-                uVal = prf.compute(key, uVal);
+                uVal = prf.compute(key, bytes::ByteVec(uVal.begin(), uVal.end()));
             }
 
             bytes::xorBytes(tVal, uVal);

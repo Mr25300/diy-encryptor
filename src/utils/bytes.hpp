@@ -28,4 +28,8 @@ namespace bytes {
 
     template <std::size_t N>
     std::vector<ByteArr<N>> getChunks(const ByteVec& bytes);
+
+    ByteVec getRandBytes(std::size_t n);
+    template <std::size_t N>
+    ByteArr<N> getRandBytes();
 }

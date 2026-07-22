@@ -9,12 +9,12 @@
 namespace ciphers::modes {
     template <std::size_t BlockSize>
     class CBC {
-        const padding::PaddingScheme& padder;
+        const padding::PaddingScheme<BlockSize>& padder;
         const ciphers::BlockCipher<BlockSize>& cipher;
         const bytes::ByteArr<BlockSize>& iv;
 
     public:
-        CBC(const padding::PaddingScheme& padder, const ciphers::BlockCipher<BlockSize>& cipher, const bytes::ByteArr<BlockSize>& iv) : padder{padder}, cipher{cipher}, iv{iv} {}
+        CBC(const padding::PaddingScheme<BlockSize>& padder, const ciphers::BlockCipher<BlockSize>& cipher, const bytes::ByteArr<BlockSize>& iv) : padder{padder}, cipher{cipher}, iv{iv} {}
 
         void encrypt(bytes::ByteVec& input) const;
         bool decrypt(bytes::ByteVec& input) const;

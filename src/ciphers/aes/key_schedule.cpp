@@ -19,7 +19,7 @@ namespace ciphers::aes {
     }()};
 
     template <typename Pol>
-    void KeySchedule<Pol>::generate(const bytes::ByteArr<Pol::keySize>& key) {
+    KeySchedule<Pol>::KeySchedule(const SubstitutionBox& subBox, const bytes::ByteArr<Pol::keySize>& key) : subBox{subBox} {
         KeyBlock<Pol> keyBlock{utils::bytesToBlock<Pol::keyCols>(key)};
         std::size_t wordCount{(Pol::rounds + 1) * constants::cols};
         std::size_t wordInd{};

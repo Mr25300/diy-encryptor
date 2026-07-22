@@ -17,7 +17,7 @@ namespace prfs {
         static constexpr std::uint8_t opad{0x5C};
 
     public:
-        HMAC(const hashes::Hash<BlockSize, OutputSize>& hash) : hash{hash} {}
+        constexpr HMAC(const hashes::Hash<BlockSize, OutputSize>& hash) : hash{hash} {}
 
         bytes::ByteArr<OutputSize> compute(const bytes::ByteVec& key, const bytes::ByteVec& text) const;
     };

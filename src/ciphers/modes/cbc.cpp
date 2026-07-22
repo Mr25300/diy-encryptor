@@ -4,7 +4,7 @@
 
 namespace ciphers::modes {
     template <std::size_t BlockSize>
-    void CBC<BlockSize>::encrypt(std::vector<std::uint8_t>& input) const {
+    void CBC<BlockSize>::encrypt(bytes::ByteVec& input) const {
         this->padder.pad(input);
 
         std::vector<bytes::ByteArr<BlockSize>> blocks{bytes::getChunks<BlockSize>(input)};
@@ -19,7 +19,7 @@ namespace ciphers::modes {
     }
 
     template <std::size_t BlockSize>
-    bool CBC<BlockSize>::decrypt(std::vector<std::uint8_t>& input) const {
+    bool CBC<BlockSize>::decrypt(bytes::ByteVec& input) const {
         if (input.size() % BlockSize != 0) return false;
 
         std::vector<bytes::ByteArr<BlockSize>> blocks{bytes::getChunks<BlockSize>(input)};

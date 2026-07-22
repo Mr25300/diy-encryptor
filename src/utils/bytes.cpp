@@ -1,6 +1,7 @@
 #include "bytes.hpp"
 
 #include <stdexcept>
+#include <random>
 
 namespace bytes {
     template <typename C>
@@ -82,5 +83,36 @@ namespace bytes {
         }
 
         return chunks;
+    }
+
+    static std::uint8_t getRandInt() {
+        // static but thread safe
+        thread_local std::random_device rd;
+        thread_local std::mt19937 gen(rd());
+        thread_local std::uniform_int_distribution<> dist(0, 255);
+
+        return dist(gen);
+    }
+
+    bytes::ByteVec getRandBytes(std::size_t n) {
+        bytes::ByteVec bytes;
+        bytes.resize(n);
+
+        for (std::size_t i{}; i < n; ++i) {
+            bytes[i] = getRandInt();
+        }
+
+        return bytes;
+    }
+
+    template <std::size_t N>
+    bytes::ByteArr<N> getRandBytes() {
+        bytes::ByteArr<N> bytes;
+
+        for (std::size_t i{}; i < N; ++i) {
+            bytes[i] = getRandInt();
+        }
+
+        return bytes;
     }
 }

@@ -5,7 +5,8 @@
 #include <utils/bytes.hpp>
 
 namespace padding {
-    struct PKCS7 : PaddingScheme { // TODO: Make sure private methods stay private
+    template <std::size_t BlockSize>
+    struct PKCS7 : PaddingScheme<BlockSize> {
         void pad(bytes::ByteVec& input) const;
         bool unpad(bytes::ByteVec& input) const;
     };

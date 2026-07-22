@@ -7,9 +7,6 @@
 namespace hashes {
     template <std::size_t BlockSize, std::size_t OutputSize>
     struct Hash {
-        static constexpr std::size_t blockSize{BlockSize};
-        static constexpr std::size_t outputSize{OutputSize};
-
         virtual bytes::ByteArr<OutputSize> compute(const bytes::ByteVec& input) const = 0;
     };
 }

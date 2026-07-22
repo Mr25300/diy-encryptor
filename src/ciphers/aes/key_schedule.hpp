@@ -23,11 +23,9 @@ namespace ciphers::aes {
         }
 
     public:
-        KeySchedule(const SubstitutionBox& subBox) : subBox{subBox} {}
+        KeySchedule(const SubstitutionBox& subBox, const bytes::ByteArr<Pol::keySize>& key);
 
         const StateBlock& operator[](std::size_t round) const { return roundKeys[round]; }
-
-        void generate(const bytes::ByteArr<Pol::keySize>& key);
 
         friend std::ostream& operator<<(std::ostream& stream, const KeySchedule& keySchedule);
     };

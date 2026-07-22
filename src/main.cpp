@@ -1,9 +1,6 @@
 #include <iostream>
-#include <fstream>
 #include <filesystem>
 #include <string>
-#include <ostream>
-#include <random>
 
 #include <hashes/sha256.hpp>
 #include <prfs/hmac.hpp>
@@ -16,74 +13,23 @@
 #include <padding/pkcs7.hpp>
 #include <ciphers/modes/cbc.hpp>
 
-constexpr int kdfIterations{6000}; // Should be 600000
+#include <utils/bytes.hpp>
+#include <utils/io.hpp>
 
-constexpr hashes::SHA256 sha256{};
-constexpr prfs::HMAC hmac{sha256};
-constexpr kdfs::PBKDF2 pbkdf2{hmac, kdfIterations};
+namespace aes = ciphers::aes;
 
-constexpr ciphers::aes::SubstitutionBox subBox;
-constexpr ciphers::aes::KeySchedule keySchedule{subBox};
-constexpr ciphers::aes::AES aesCipher{subBox, keySchedule};
+using AESPol = ciphers::aes::AES128;
 
-constexpr padding::PKCS7<ciphers::aes::constants::blockSize> padder{};
-constexpr ciphers::modes::CBC cbcCipher{padder, aesCipher};
+const std::size_t kdfIterations{1000}; // Should be 600000
+const std::size_t kdfSaltSize{32}; // In bytes
 
-const std::string encryptedExtension = ".enc";
-const std::string decryptedExtension = ".dec";
-const std::string metadataExtension = ".enc.meta"; // Change to ".enc.meta" for storing salt from PBKDF2
-
-std::vector<std::uint8_t> generateIV(std::size_t length) {
-    std::mt19937 gen(std::random_device{}());
-    std::uniform_int_distribution<> dist(0, 255);
-
-    std::vector<std::uint8_t> iv(length, '\0');
-
-    for (std::size_t i{}; i < length; ++i) {
-        iv[i] = dist(gen);
-    }
-
-    return iv;
-}
-
-std::vector<std::uint8_t> readFile(const std::filesystem::path& filePath) {
-    std::ifstream inFile(filePath, std::ios::binary | std::ios::ate);
-
-    if (!inFile) {
-        throw std::ios_base::failure("Failed to read from file: " + filePath.string());
-    }
-
-    std::streamsize fileSize{inFile.tellg()};
-    inFile.seekg(0);
-
-    std::vector<std::uint8_t> fileData(fileSize);
-    inFile.read(reinterpret_cast<char*>(fileData.data()), fileSize);
-    inFile.close();
-
-    return fileData;
-}
-
-void writeToFile(const std::filesystem::path& filePath, const std::vector<std::uint8_t>& data) {
-    std::ofstream outFile(filePath, std::ios::binary);
-
-    if (!outFile) {
-        throw std::ios_base::failure("Failed to write to file: " + filePath.string());
-    }
-
-    outFile.seekp(0);
-    outFile.write(reinterpret_cast<const char*>(data.data()), data.size());
-    outFile.close();
-}
-
-void deleteFile(const std::filesystem::path& filePath) {
-    if (!std::filesystem::remove(filePath)) {
-        std::cerr << "Failed to delete file: " + filePath.string();
-    }
-}
+const std::string encryptedExtension{".enc"};
+const std::string decryptedExtension{".dec"};
+const std::string metadataExtension{".enc.meta"};
 
 enum EncryptionMode { ENCRYPT, DECRYPT, UNDEFINED };
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     std::string prevArg;
     std::string filePathStr;
     std::string outputDirStr;
@@ -91,18 +37,38 @@ int main(int argc, char *argv[]) {
     bool deletePrev = false;
 
     for (std::size_t i{1}; i < argc; ++i) {
-        char *arg = argv[i];
-        std::string argStr = std::string(arg);
+        char* arg{argv[i]};
+        std::string argStr{std::string(arg)};
 
-        if (argStr == "encrypt") encryptionMode = ENCRYPT;
-        else if (argStr == "decrypt") encryptionMode = DECRYPT;
+        if (prevArg == "--mode" || prevArg == "-m") {
+            if (argStr == "encrypt") encryptionMode = ENCRYPT;
+            else if (argStr == "decrypt") encryptionMode = DECRYPT;
+            else {
+                std::cerr << "Invalid encryption mode provided.";
+
+                return 1;
+            }
+        }
+        else if (prevArg == "--input" || prevArg == "-i") filePathStr = arg;
+        else if (prevArg == "--output" || prevArg == "-o") outputDirStr = arg;
         else if (argStr == "--delete" || argStr == "-d") deletePrev = true;
-        else {
-            if (prevArg == "--output" || prevArg == "-o") outputDirStr = arg;
-            else if (filePathStr.empty()) filePathStr = arg;
+        else if (
+            argStr != "--mode" && argStr != "-m" &&
+            argStr != "--input" && argStr != "-i" &&
+            argStr != "--output" && argStr != "-o"
+        ) {
+            std::cerr << "Invalid argument provided.";
+
+            return 1;
         }
 
         prevArg = argStr;
+    }
+
+    if (filePathStr.empty()) {
+        std::cerr << "File path unspecified.";
+
+        return 1;
     }
 
     if (encryptionMode == UNDEFINED) {
@@ -114,7 +80,10 @@ int main(int argc, char *argv[]) {
     std::filesystem::path inputPath(filePathStr); // Make sure this exists first before doing stuff below
     std::filesystem::path outputPath;
     std::filesystem::path metadataPath;
-    std::vector<std::uint8_t> iv;
+
+    bytes::ByteArr<aes::constants::blockSize> cbcIV;
+    bytes::ByteVec kdfSalt; // TODO: Switch to ByteArr by using span for KDF.compute, PRF.compute and io functions
+    kdfSalt.reserve(kdfSaltSize);
 
     if (outputDirStr.empty()) {
         outputPath = inputPath;
@@ -133,7 +102,8 @@ int main(int argc, char *argv[]) {
             metadataPath += metadataExtension;
         }
 
-        iv = generateIV();
+        cbcIV = bytes::getRandBytes<aes::constants::blockSize>();
+        kdfSalt = bytes::getRandBytes(kdfSaltSize);
 
     } else if (encryptionMode == DECRYPT) {
         if (inputPath.extension() == encryptedExtension) {
@@ -144,40 +114,45 @@ int main(int argc, char *argv[]) {
             metadataPath += metadataExtension;
         }
 
-        iv = readFile(metadataPath);
+        std::vector<bytes::ByteVec> metaLines{io::readFileLines(metadataPath)};
+        bytes::ByteVec& ivLine{metaLines[0]};
+        bytes::ByteVec& saltLine{metaLines[1]};
+
+        std::copy(ivLine.begin(), ivLine.begin() + cbcIV.size(), cbcIV.begin());
+        kdfSalt.insert(kdfSalt.end(), saltLine.begin(), saltLine.begin() + kdfSaltSize);
     }
 
-    std::vector<std::uint8_t> data{readFile(inputPath)};
+    std::vector<std::uint8_t> data{io::readFile(inputPath)};
 
-    std::string passwordStr;
     std::cout << (encryptionMode == ENCRYPT ? "Encrypting" : "Decrypting")
         << " file, input password key: ";
-    std::cin >> passwordStr;
 
-    std::vector<std::uint8_t> password(passwordStr.begin(), passwordStr.end());
+    bytes::ByteVec password{io::getInput()};
 
-    keySchedule.generate(password);
+    hashes::SHA256 sha256{};
+    prfs::HMAC<64, 32> hmac{sha256};
+    kdfs::PBKDF2<32, AESPol::keySize> pbkdf2{hmac, kdfIterations};
 
-    std::vector<std::uint8_t> keyBytes{pbkdf2.compute(passwordBytes, {}, keySize)}; // TODO: Add password salt to file
-    std::vector<std::uint8_t> initVecBytes(initVecStr.begin(), initVecStr.end());
+    bytes::ByteArr<AESPol::keySize> key{pbkdf2.compute(password, kdfSalt)};
 
-    Block<cols, rows> initVec{Block<cols, rows>::fromBytes(initVecBytes)};
-    Block<keyWordCount, rows> key{Block<keyWordCount, rows>::fromBytes(keyBytes)};
+    aes::SubstitutionBox subBox{};
+    aes::KeySchedule<AESPol> keySchedule{subBox, key};
+    aes::AES<AESPol> aesCipher{subBox, keySchedule};
 
-    KeySchedule<cols, rows, rounds> keySchedule = KeySchedule<cols, rows, rounds>(key, subBox, roundConstants);
-    CBC<cols, rows> blockString = CBC<cols, rows>(inputData, encryptionMode == DECRYPT);
+    padding::PKCS7<aes::constants::blockSize> padder{};
+    ciphers::modes::CBC<aes::constants::blockSize> cbcCipher{padder, aesCipher, cbcIV};
 
-    if (encryptionMode == ENCRYPT) blockString.encrypt(keySchedule, subBox, mixColMatrix, initVec);
-    else if (encryptionMode == DECRYPT) blockString.decrypt(keySchedule, subBox, mixColMatrixInv, initVec);
+    if (encryptionMode == ENCRYPT) cbcCipher.encrypt(data);
+    else if (encryptionMode == DECRYPT) cbcCipher.decrypt(data);
 
-    std::string outputData = blockString.getText(encryptionMode == DECRYPT);
+    io::writeToFile(outputPath, data);
 
-    writeToFile(outputPath, outputData);
+    if (encryptionMode == ENCRYPT) io::writeLinesToFile<2>(metadataPath, {
+        bytes::ByteVec(cbcIV.begin(), cbcIV.end()), kdfSalt
+    });
+    else if (encryptionMode == DECRYPT) io::deleteFile(metadataPath);
 
-    if (encryptionMode == ENCRYPT) writeToFile(metadataPath, initVecStr);
-    else if (encryptionMode == DECRYPT) deleteFile(metadataPath);
-
-    if (deletePrev) deleteFile(inputPath);
+    if (deletePrev) io::deleteFile(inputPath);
 
     return 0;
 }

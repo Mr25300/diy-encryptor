@@ -2,11 +2,10 @@
 
 #include "hash.hpp"
 
-#include <vector>
-#include <cstdint>
+#include <utils/bytes.hpp>
 
 namespace hashes {
     struct SHA256 : Hash<64, 32> {
-        bytes::ByteArr<32> compute(const std::vector<std::uint8_t>& input) const;
+        bytes::ByteArr<32> compute(const bytes::ByteVec& input) const;
     };
 }

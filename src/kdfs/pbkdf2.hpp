@@ -9,10 +9,10 @@
 namespace kdfs {
     template <std::size_t HLen, std::size_t DKeySize>
     class PBKDF2 {
-        // TODO: Test
+        // TODO: Make sure this is correct
         static_assert(DKeySize != 0, "Derived key size must be greater than 0.");
         static_assert(
-            DKeySize / HLen > std::numeric_limits<std::uint32_t>::max(),
+            DKeySize / HLen <= std::numeric_limits<std::uint32_t>::max(),
             "Derived key size is too large."
         );
 
