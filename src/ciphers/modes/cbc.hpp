@@ -16,8 +16,37 @@ namespace ciphers::modes {
     public:
         CBC(const padding::PaddingScheme<BlockSize>& padder, const ciphers::BlockCipher<BlockSize>& cipher, const bytes::ByteArr<BlockSize>& iv) : padder{padder}, cipher{cipher}, iv{iv} {}
 
-        void encrypt(bytes::ByteVec& input) const;
-        bool decrypt(bytes::ByteVec& input) const;
+        void encrypt(bytes::ByteVec& input) const {
+            this->padder.pad(input);
+
+            std::vector<bytes::ByteArr<BlockSize>> blocks{bytes::getChunks<BlockSize>(input)};
+            const bytes::ByteArr<BlockSize>* prevBlock{&(this->iv)};
+
+            for (bytes::ByteArr<BlockSize>& block : blocks) {
+                bytes::getXorBytes(block, *prevBlock);
+                this->cipher.encrypt(block);
+
+                prevBlock = &block;
+            }
+        }
+
+        bool decrypt(bytes::ByteVec& input) const {
+            if (input.size() % BlockSize != 0) return false;
+
+            std::vector<bytes::ByteArr<BlockSize>> blocks{bytes::getChunks<BlockSize>(input)};
+            bytes::ByteArr<BlockSize> prevBlock{this->iv};
+
+            for (bytes::ByteArr<BlockSize>& block : blocks) {
+                bytes::ByteArr<BlockSize> currBlock{block};
+
+                this->cipher.decrypt(block);
+                bytes::getXorBytes(block, currBlock);
+
+                prevBlock = block;
+            }
+
+            return this->padder.unpad(input);
+        }
 
     //     CBC(const std::string& text, bool encrypted) {
     //         size_t blockSize = cols * rows;

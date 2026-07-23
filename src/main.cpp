@@ -120,6 +120,7 @@ int main(int argc, char* argv[]) {
 
         std::copy(ivLine.begin(), ivLine.begin() + cbcIV.size(), cbcIV.begin());
         kdfSalt.insert(kdfSalt.end(), saltLine.begin(), saltLine.begin() + kdfSaltSize);
+        // TODO: Add error handling for corruption here too
     }
 
     std::vector<std::uint8_t> data{io::readFile(inputPath)};
@@ -143,11 +144,17 @@ int main(int argc, char* argv[]) {
     ciphers::modes::CBC<aes::constants::blockSize> cbcCipher{padder, aesCipher, cbcIV};
 
     if (encryptionMode == ENCRYPT) cbcCipher.encrypt(data);
-    else if (encryptionMode == DECRYPT) cbcCipher.decrypt(data);
+    else if (encryptionMode == DECRYPT) {
+        if (!cbcCipher.decrypt(data)) {
+            std::cerr << "Failed to decrypt file: padding corrupted";
+
+            return 1;
+        }
+    }
 
     io::writeToFile(outputPath, data);
 
-    if (encryptionMode == ENCRYPT) io::writeLinesToFile<2>(metadataPath, {
+    if (encryptionMode == ENCRYPT) io::writeLinesToFile(metadataPath, {
         bytes::ByteVec(cbcIV.begin(), cbcIV.end()), kdfSalt
     });
     else if (encryptionMode == DECRYPT) io::deleteFile(metadataPath);

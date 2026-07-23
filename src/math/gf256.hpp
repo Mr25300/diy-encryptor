@@ -79,11 +79,11 @@ namespace math {
 
         static constexpr char hexDigits[]{"0123456789ABCDEF"};
 
-    public:
         std::uint8_t value{};
 
+    public:
         constexpr GF256() = default;
-        constexpr GF256(uint8_t v) : value{v} {}
+        constexpr GF256(std::uint8_t v) : value{v} {}
 
         constexpr GF256 operator-() const {
             return *this;

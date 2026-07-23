@@ -42,8 +42,7 @@ namespace io {
         file.close();
     }
 
-    template <std::size_t N>
-    void writeLinesToFile(const std::filesystem::path& filePath, const std::array<bytes::ByteVec, N>& lines) {
+    void writeLinesToFile(const std::filesystem::path& filePath, const std::vector<bytes::ByteVec>& lines) {
         // Clear file first
         std::ofstream file(filePath, std::ios::binary | std::ios::app);
         if (!file) throw std::ios_base::failure("Failed to write lines to file: " + filePath.string());
