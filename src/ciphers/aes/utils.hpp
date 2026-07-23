@@ -28,7 +28,7 @@ namespace ciphers::aes::utils {
     void blockToBytes(const Block<Cols>& block, std::array<std::uint8_t, Cols * constants::rows>& bytes) {
         for (std::size_t j{}; j < Cols; ++j) {
             for (std::size_t i{}; i < constants::rows; ++i) {
-                bytes[j * constants::rows + i] = block[j][i].value;
+                bytes[j * constants::rows + i] = block[j][i].getValue();
             }
         }
     }

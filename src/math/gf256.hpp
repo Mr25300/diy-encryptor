@@ -85,9 +85,9 @@ namespace math {
         constexpr GF256() = default;
         constexpr GF256(std::uint8_t v) : value{v} {}
 
-        constexpr GF256 operator-() const {
-            return *this;
-        }
+        constexpr std::uint8_t getValue() const { return value; }
+
+        constexpr GF256 operator-() const { return *this; }
 
         constexpr GF256 inv() const { // Utilizes euclidean algorithm while keeping track of coefficients and ensuring that the Bezout identity is satisfied for the remainder at each step
             if (value == 0) return 0;
@@ -154,13 +154,8 @@ namespace math {
             return *this;
         }
 
-        constexpr bool operator==(GF256 other) {
-            return value == other.value;
-        }
-
-        constexpr bool operator!=(GF256 other) {
-            return value != other.value;
-        }
+        constexpr bool operator==(GF256 other) { return value == other.value; }
+        constexpr bool operator!=(GF256 other) { return value != other.value; }
 
         // TODO: Remove below and make operator<< use state to manage format
         void print(std::ostream& stream, GFFormat format = GFFormat::Poly) const;
