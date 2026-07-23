@@ -92,6 +92,18 @@ namespace bytes {
         return chunks;
     }
 
+    template <std::size_t N>
+    bytes::ByteVec getCollapsed(const std::vector<ByteArr<N>> chunks) {
+        bytes::ByteVec bytes;
+        bytes.reserve(chunks.size() * N);
+
+        for (const ByteArr<N>& chunk : chunks) {
+            bytes.insert(bytes.end(), chunk.begin(), chunk.end());
+        }
+
+        return bytes;
+    }
+
     std::uint8_t getRandByte();
     ByteVec getRandBytes(std::size_t n);
 

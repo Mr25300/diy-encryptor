@@ -1,7 +1,6 @@
+- Make IO methods use vectors only (not arrays)
 - Go through all TODOs
-- Switch to C++17 (don't use span or things like that)
-- Make crypto utils for things like using Bytes = (vector of uint8_ts) and xorBytes and appendBytes methods (then use in HMAC, SHA256 and BlockCipher stuff)
-- Remove occurences of std::array and replace with std::vector to make it runtime compatible (possibly for Vector and Matrix as well)
+- Switch to C++20 to use spans (especially to make CBC mutative)
 - Fix formatting for constructors/functions with many parameters (make neovim do it automatically)
 - Improve GF256 printing in blocks and vectors by manipulating cout stream state (similar to std::cout << std::hex) instead of passing in GFFormat
 - Organize classes and functions into namespaces better

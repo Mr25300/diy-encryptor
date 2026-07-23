@@ -19,6 +19,7 @@ namespace ciphers::modes {
         void encrypt(bytes::ByteVec& input) const {
             this->padder.pad(input);
 
+            // TODO: Make this mutate properly with span
             std::vector<bytes::ByteArr<BlockSize>> blocks{bytes::getChunks<BlockSize>(input)};
             const bytes::ByteArr<BlockSize>* prevBlock{&(this->iv)};
 
@@ -28,11 +29,14 @@ namespace ciphers::modes {
 
                 prevBlock = &block;
             }
+
+            input = bytes::getCollapsed(blocks);
         }
 
         bool decrypt(bytes::ByteVec& input) const {
             if (input.size() % BlockSize != 0) return false;
 
+            // TODO: Make this mutate properly with span
             std::vector<bytes::ByteArr<BlockSize>> blocks{bytes::getChunks<BlockSize>(input)};
             bytes::ByteArr<BlockSize> prevBlock{this->iv};
 
@@ -40,10 +44,12 @@ namespace ciphers::modes {
                 bytes::ByteArr<BlockSize> currBlock{block};
 
                 this->cipher.decrypt(block);
-                bytes::getXorBytes(block, currBlock);
+                bytes::getXorBytes(block, prevBlock);
 
                 prevBlock = block;
             }
+
+            input = bytes::getCollapsed(blocks);
 
             return this->padder.unpad(input);
         }

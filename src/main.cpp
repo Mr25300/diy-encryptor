@@ -20,7 +20,7 @@ namespace aes = ciphers::aes;
 
 using AESPol = ciphers::aes::AES128;
 
-const std::size_t kdfIterations{1000}; // Should be 600000
+const std::size_t kdfIterations{60000}; // Should be 600000
 const std::size_t kdfSaltSize{32}; // In bytes
 
 const std::string encryptedExtension{".enc"};
@@ -28,6 +28,16 @@ const std::string decryptedExtension{".dec"};
 const std::string metadataExtension{".enc.meta"};
 
 enum EncryptionMode { ENCRYPT, DECRYPT, UNDEFINED };
+
+void printBytes(bytes::ByteVec bytes) {
+    std::cout << std::hex;
+
+    for (std::uint8_t b : bytes) {
+        std::cout << static_cast<int>(b);
+    }
+
+    std::cout << '\n' << std::dec;
+}
 
 int main(int argc, char* argv[]) {
     std::string prevArg;
@@ -105,6 +115,9 @@ int main(int argc, char* argv[]) {
         cbcIV = bytes::getRandBytes<aes::constants::blockSize>();
         kdfSalt = bytes::getRandBytes(kdfSaltSize);
 
+        printBytes(bytes::ByteVec(cbcIV.begin(), cbcIV.end()));
+        printBytes(kdfSalt);
+
     } else if (encryptionMode == DECRYPT) {
         if (inputPath.extension() == encryptedExtension) {
             outputPath.replace_extension("");
@@ -114,13 +127,14 @@ int main(int argc, char* argv[]) {
             metadataPath += metadataExtension;
         }
 
-        std::vector<bytes::ByteVec> metaLines{io::readFileLines(metadataPath)};
-        bytes::ByteVec& ivLine{metaLines[0]};
-        bytes::ByteVec& saltLine{metaLines[1]};
+        bytes::ByteVec metaData{io::readFile(metadataPath)};
 
-        std::copy(ivLine.begin(), ivLine.begin() + cbcIV.size(), cbcIV.begin());
-        kdfSalt.insert(kdfSalt.end(), saltLine.begin(), saltLine.begin() + kdfSaltSize);
+        std::copy(metaData.begin(), metaData.begin() + cbcIV.size(), cbcIV.begin());
+        kdfSalt.insert(kdfSalt.end(), metaData.end() - kdfSaltSize, metaData.end());
         // TODO: Add error handling for corruption here too
+
+        printBytes(bytes::ByteVec(cbcIV.begin(), cbcIV.end()));
+        printBytes(kdfSalt);
     }
 
     std::vector<std::uint8_t> data{io::readFile(inputPath)};
@@ -146,7 +160,7 @@ int main(int argc, char* argv[]) {
     if (encryptionMode == ENCRYPT) cbcCipher.encrypt(data);
     else if (encryptionMode == DECRYPT) {
         if (!cbcCipher.decrypt(data)) {
-            std::cerr << "Failed to decrypt file: padding corrupted";
+            std::cerr << "Failed to decrypt file due to corruption.\n";
 
             return 1;
         }
@@ -154,9 +168,7 @@ int main(int argc, char* argv[]) {
 
     io::writeToFile(outputPath, data);
 
-    if (encryptionMode == ENCRYPT) io::writeLinesToFile(metadataPath, {
-        bytes::ByteVec(cbcIV.begin(), cbcIV.end()), kdfSalt
-    });
+    if (encryptionMode == ENCRYPT) io::writeToFile(metadataPath, bytes::getAppendBytes(cbcIV, kdfSalt));
     else if (encryptionMode == DECRYPT) io::deleteFile(metadataPath);
 
     if (deletePrev) io::deleteFile(inputPath);
