@@ -1,3 +1,6 @@
+- Fix and test AES (currently not working)
+- Add tests
+
 - Make IO methods use vectors only (not arrays)
 - Go through all TODOs
 - Switch to C++20 to use spans (especially to make CBC mutative)
@@ -9,7 +12,6 @@
 - Replace BlockString with CBC class
 - Modularize PBKDF related code better
 - Clean up code style (use correct methods of initialization, etc.)
-- Add tests
 - Optimize all classes, methods and ensure memory is managed properly
 - Reformat all code for maximum performance while maintaining readability
 - Consider using expression templates

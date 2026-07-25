@@ -82,7 +82,7 @@ namespace bytes {
             throw std::invalid_argument("Number of bytes must be a multiple of the chunk size.");
 
         for (std::size_t i{}; i < bytes.size() / N; ++i) {
-            ByteArr<N> chunk{chunks.emplace_back()};
+            ByteArr<N>& chunk{chunks.emplace_back()};
 
             std::copy(
                 bytes.begin() + i * N, bytes.begin() + (i + 1) * N, chunk.begin()

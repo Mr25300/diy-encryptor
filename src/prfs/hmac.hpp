@@ -10,7 +10,6 @@
 namespace prfs {
     template <std::size_t BlockSize, std::size_t OutputSize>
     class HMAC : public PRF<OutputSize> {
-    private:
         const hashes::Hash<BlockSize, OutputSize>& hash;
 
         static const std::uint8_t ipad{0x36};
