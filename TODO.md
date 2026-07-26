@@ -1,19 +1,14 @@
 - Fix and test AES (currently not working)
-- Add tests
+- Make github run tests
 
+- Move implementations to separate source file wherever possible
 - Make IO methods use vectors only (not arrays)
-- Go through all TODOs
-- Switch to C++20 to use spans (especially to make CBC mutative)
+- Switch to C++20 to use spans (especially to make CBC mutative and PBKDF2/HMAC/SHA256 more efficient)
+
 - Fix formatting for constructors/functions with many parameters (make neovim do it automatically)
 - Improve GF256 printing in blocks and vectors by manipulating cout stream state (similar to std::cout << std::hex) instead of passing in GFFormat
 - Organize classes and functions into namespaces better
-- Improve Makefile (more automation)
-- Use templates for PBKDF related classes so that output sizes can be constexpr
-- Replace BlockString with CBC class
-- Modularize PBKDF related code better
 - Clean up code style (use correct methods of initialization, etc.)
-- Optimize all classes, methods and ensure memory is managed properly
-- Reformat all code for maximum performance while maintaining readability
 - Consider using expression templates
 - Add way to measure non-linearity with Hamming distance for SubBox
 - Add way to check if matrix is Maximum Distance Separable (MDS) --> Show that every submatrix is non-singular (non-zero determinant)

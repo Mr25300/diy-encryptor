@@ -131,11 +131,13 @@ namespace hashes {
     bytes::ByteArr<32> hashes::SHA256::compute(const bytes::ByteVec& input) const {
         std::array<std::uint32_t, 8> hCopy{vals.h};
 
-        std::vector<std::array<std::uint32_t, 16>> chunks;
         std::size_t inputWords{(input.size() >> 2) + 1}; // Divide by 4 and add an extra 1
 
+        std::vector<std::array<std::uint32_t, 16>> chunks;
+        chunks.reserve((inputWords >> 4) + 1);
+
         for (std::size_t i{}; i < inputWords; ++i) { // Loop through words (32 bit segments)
-            std::size_t chunkIndex{i / 16};
+            std::size_t chunkIndex{i >> 4}; // Divide by 16
 
             if (chunkIndex >= chunks.size()) chunks.emplace_back(); // Triggers zero-initialization
 
@@ -160,7 +162,7 @@ namespace hashes {
         if (inputWords % 16 > 16 - 2) chunks.emplace_back(); // 2 words needed for 64 bit size
 
         std::array<std::uint32_t, 16>& lastChunk{chunks[chunks.size() - 1]};
-        std::int64_t inputBits{static_cast<std::int64_t>(input.size()) * 8};
+        std::uint64_t inputBits{static_cast<std::uint64_t>(input.size()) * 8};
 
         lastChunk[14] = static_cast<std::int32_t>(inputBits >> 32);
         lastChunk[15] = static_cast<std::int32_t>(inputBits);
@@ -176,9 +178,9 @@ namespace hashes {
             std::array<std::uint32_t, 8> hVars{hCopy};
 
             for (std::size_t i{}; i < 64; ++i) {
-                uint32_t temp1{hVars[7] + sum1(hVars[4]) + ch(hVars[4], hVars[5], hVars[6])
+                std::uint32_t temp1{hVars[7] + sum1(hVars[4]) + ch(hVars[4], hVars[5], hVars[6])
                     + vals.k[i] + w[i]};
-                uint32_t temp2{sum0(hVars[0]) + maj(hVars[0], hVars[1], hVars[2])};
+                std::uint32_t temp2{sum0(hVars[0]) + maj(hVars[0], hVars[1], hVars[2])};
 
                 hVars[7] = hVars[6];
                 hVars[6] = hVars[5];
