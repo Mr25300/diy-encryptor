@@ -122,6 +122,9 @@ namespace math {
             return *this;
         }
 
+        constexpr bool operator==(const Matrix<T, Rows, Cols>& mat) const { return rows == mat.rows; }
+        constexpr bool operator!=(const Matrix<T, Rows, Cols>& mat) const { return rows != mat.rows; }
+
         template <std::size_t AugCols>
         constexpr bool rowReduce(Matrix<T, Rows, AugCols>& aug);
 

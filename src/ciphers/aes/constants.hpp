@@ -11,6 +11,8 @@ namespace ciphers::aes {
 
     template <std::size_t KeyCols, std::size_t Rounds>
     struct AESPolicy {
+        // Generalize this to Rijndael and add static assertions for specifications (i.e. block size)
+
         static constexpr std::size_t keyCols{KeyCols};
         static constexpr std::size_t keySize{keyCols * constants::rows};
 

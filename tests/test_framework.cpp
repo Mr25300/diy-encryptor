@@ -25,7 +25,7 @@ namespace test {
             } catch (const std::exception& e) {
                 ++failed;
 
-                std::cout << "[ FAILURE ] -> " << e.what() << '\n';
+                std::cout << "[ FAILURE ] " << e.what() << '\n';
             }
         }
 

@@ -1,4 +1,8 @@
 - Fix and test AES (currently not working)
+- Finish test framework (printing)
+- Fix all compilation warnings
+- Make PBKDF2, HMAC and SHA256 faster
+- Refactor AES into general Rijndael cipher but create specific policies for AES
 - Make github run tests
 
 - Move implementations to separate source file wherever possible

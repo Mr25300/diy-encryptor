@@ -154,8 +154,8 @@ namespace math {
             return *this;
         }
 
-        constexpr bool operator==(GF256 other) { return value == other.value; }
-        constexpr bool operator!=(GF256 other) { return value != other.value; }
+        constexpr bool operator==(GF256 other) const { return value == other.value; }
+        constexpr bool operator!=(GF256 other) const { return value != other.value; }
 
         // TODO: Remove below and make operator<< use state to manage format
         void print(std::ostream& stream, GFFormat format = GFFormat::Poly) const;

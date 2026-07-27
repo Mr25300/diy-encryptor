@@ -23,15 +23,6 @@ namespace kdfs {
         constexpr PBKDF2(const prfs::PRF<HLen>& prf, std::size_t iterations) : prf(prf), iters{iterations} {}
 
         bytes::ByteArr<DKeySize> compute(const bytes::ByteVec& key, const bytes::ByteVec& salt) const {
-            // if (DKeySize == 0) {
-            //     throw std::invalid_argument("Derived key size must be greater than 0.");
-            // }
-
-            // Since indexing variable is only 4 bytes
-            // if (DKeySize / HLen > std::numeric_limits<std::uint32_t>::max()) {
-            //     throw std::length_error("Requested dervied key size is too large.");
-            // }
-
             std::size_t len{(DKeySize + HLen - 1) / HLen};
             std::size_t remainder{DKeySize - (len - 1) * HLen};
 

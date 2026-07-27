@@ -17,7 +17,7 @@ namespace ciphers::aes {
     class KeySchedule {
         std::array<StateBlock, Pol::rounds + 1> roundKeys;
 
-        static constexpr std::array<math::GF256, Pol::rounds> roundConstants{[] { // TODO: See if inline should be used here
+        static constexpr std::array<math::GF256, Pol::rounds> roundConstants{[] {
             std::array<math::GF256, Pol::rounds> constants;
 
             math::GF256 constant{1};
@@ -31,7 +31,7 @@ namespace ciphers::aes {
         }()};
 
         Word& getWord(std::size_t wordInd) {
-            return roundKeys[wordInd / constants::rows][wordInd % constants::rows];
+            return roundKeys[wordInd / constants::cols][wordInd % constants::cols];
         }
 
     public:
@@ -52,6 +52,9 @@ namespace ciphers::aes {
                     utils::rotWord(intermediateWord);
                     utils::subWord(intermediateWord, subBox);
                     utils::applyConstant(intermediateWord, roundConstants[wordInd / Pol::keyCols - 1]);
+
+                } else if (Pol::keyCols > 6 && wordInd % Pol::keyCols == 4) { // TODO: Generalize this for Rinjdael (replace magic numbers with constants)
+                    utils::subWord(intermediateWord, subBox);
                 }
 
                 this->getWord(wordInd) = aboveWord + intermediateWord;

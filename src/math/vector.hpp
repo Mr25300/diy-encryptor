@@ -2,6 +2,7 @@
 
 #include <math/gf256.hpp>
 
+#include <cstddef>
 #include <ostream>
 
 namespace math {
@@ -20,7 +21,7 @@ namespace math {
         constexpr Vector<T, Size> operator+(const Vector<T, Size>& vec) const {
             std::array<T, Size> newValues;
 
-            for (int i{}; i < Size; ++i) {
+            for (std::size_t i{}; i < Size; ++i) {
                 newValues[i] = values[i] + vec.values[i];
             }
 
@@ -28,7 +29,7 @@ namespace math {
         }
 
         constexpr Vector<T, Size>& operator+=(const Vector<T, Size>& vec) {
-            for (int i{}; i < Size; ++i) {
+            for (std::size_t i{}; i < Size; ++i) {
                 values[i] += vec.values[i];
             }
 
@@ -38,7 +39,7 @@ namespace math {
         constexpr Vector<T, Size> operator-(const Vector<T, Size>& vec) const {
             std::array<T, Size> newValues;
 
-            for (int i{}; i < Size; ++i) {
+            for (std::size_t i{}; i < Size; ++i) {
                 newValues[i] = values[i] - vec.values[i];
             }
 
@@ -46,7 +47,7 @@ namespace math {
         }
 
         constexpr Vector<T, Size>& operator-=(const Vector<T, Size>& vec) {
-            for (int i{}; i < Size; ++i) {
+            for (std::size_t i{}; i < Size; ++i) {
                 values[i] -= vec.values[i];
             }
 
@@ -56,7 +57,7 @@ namespace math {
         constexpr Vector<T, Size> operator*(T scalar) const {
             std::array<T, Size> newValues;
 
-            for (int i{}; i < Size; ++i) {
+            for (std::size_t i{}; i < Size; ++i) {
                 newValues[i] = values[i] * scalar;
             }
 
@@ -64,7 +65,7 @@ namespace math {
         }
 
         constexpr Vector<T, Size>& operator*=(T scalar) {
-            for (int i{}; i < Size; ++i) {
+            for (std::size_t i{}; i < Size; ++i) {
                 values[i] *= scalar;
             }
 
@@ -74,7 +75,7 @@ namespace math {
         constexpr Vector<T, Size> operator/(T scalar) const {
             std::array<T, Size> newValues;
 
-            for (int i{}; i < Size; ++i) {
+            for (std::size_t i{}; i < Size; ++i) {
                 newValues[i] = values[i] / scalar;
             }
 
@@ -82,7 +83,7 @@ namespace math {
         }
 
         constexpr Vector<T, Size>& operator/=(T scalar) {
-            for (int i{}; i < Size; ++i) {
+            for (std::size_t i{}; i < Size; ++i) {
                 values[i] /= scalar;
             }
 
@@ -92,30 +93,15 @@ namespace math {
         constexpr T operator*(const Vector<T, Size>& vec) const {
             T sum{};
 
-            for (int i{}; i < Size; ++i) {
+            for (std::size_t i{}; i < Size; ++i) {
                 sum += values[i] * vec.values[i];
             }
 
             return sum;
         }
 
-        // void subWord(const SubstitutionBox& subBox, bool inverse = false) {
-        //     for (int i = 0; i < size; i++) {
-        //         values[i] = inverse ? subBox.sub(values[i]) : subBox.subInv(values[i]);
-        //     }
-        // }
-        //
-        // void applyConstant(GF256 constant) {
-        //     values[0] += constant;
-        // }
-        //
-        // void print(std::ostream& stream, GFFormat format = GFFormat::Hex, bool list = false) const {
-        //     for (int i = 0; i < size; i++) {
-        //         if (list && i > 0) stream << ',' << ' ';
-        //
-        //         values[i].print(stream, format);
-        //     }
-        // }
+        constexpr bool operator==(const Vector<T, Size>& vec) const { return values == vec.values; }
+        constexpr bool operator!=(const Vector<T, Size>& vec) const { return values == vec.values; }
 
         friend std::ostream& operator<<(std::ostream& stream, const Vector<T, Size>& vector) {
             for (std::size_t i{}; i < Size; ++i) {
