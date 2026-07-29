@@ -5,7 +5,6 @@
 
 #include <cstdint>
 #include <array>
-#include <iostream>
 
 namespace ciphers::aes::utils {
     void rotWord(Word& word, bool invDir = false);

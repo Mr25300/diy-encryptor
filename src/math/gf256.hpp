@@ -158,7 +158,7 @@ namespace math {
         constexpr bool operator!=(GF256 other) const { return value != other.value; }
 
         // TODO: Remove below and make operator<< use state to manage format
-        void print(std::ostream& stream, GFFormat format = GFFormat::Poly) const;
+        void print(std::ostream& stream, GFFormat format = GFFormat::Hex) const;
         friend std::ostream& operator<<(std::ostream& stream, GF256 number);
     };
 }

@@ -1,5 +1,6 @@
 - Fix and test AES (currently not working)
 - Finish test framework (printing)
+- Replace Vector and Matrix class methods with functions applied to byte arrays
 - Fix all compilation warnings
 - Make PBKDF2, HMAC and SHA256 faster
 - Refactor AES into general Rijndael cipher but create specific policies for AES

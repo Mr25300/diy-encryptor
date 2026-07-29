@@ -1,5 +1,3 @@
-#include "ciphers/aes/substitution_box.hpp"
-#include "math/gf256.hpp"
 #include "test_framework.hpp"
 #include "test_utils.hpp"
 
@@ -8,6 +6,7 @@
 #include <prfs/hmac.hpp>
 #include <kdfs/pbkdf2.hpp>
 #include <ciphers/aes/constants.hpp>
+#include <ciphers/aes/substitution_box.hpp>
 #include <ciphers/aes/key_schedule.hpp>
 #include <ciphers/aes/aes.hpp>
 
@@ -29,16 +28,17 @@ void testPBKDF2(const bytes::ByteVec& key, const bytes::ByteVec& salt, std::size
         throw std::runtime_error("PBKDF2 output does not match expected output.");
 }
 
-using ciphers::aes::AES128;
-using ciphers::aes::AES192;
-using ciphers::aes::AES256;
-using ciphers::aes::SubstitutionBox;
-using ciphers::aes::KeySchedule;
-using ciphers::aes::StateBlock;
-using ciphers::aes::Word;
 using ciphers::aes::constants::blockSize;
 using ciphers::aes::constants::cols;
 using ciphers::aes::utils::bytesToBlock;
+using ciphers::aes::AES128;
+using ciphers::aes::AES192;
+using ciphers::aes::AES256;
+using ciphers::aes::Word;
+using ciphers::aes::StateBlock;
+using ciphers::aes::SubstitutionBox;
+using ciphers::aes::KeySchedule;
+using ciphers::aes::AES;
 
 template <typename Pol>
 void testKeySchedule(const bytes::ByteArr<Pol::keySize>& key, const std::array<bytes::ByteArr<blockSize>, Pol::rounds + 1>& expected) {
@@ -52,6 +52,25 @@ void testKeySchedule(const bytes::ByteArr<Pol::keySize>& key, const std::array<b
             throw std::runtime_error(ss.str());
         }
     }
+}
+
+template <typename Pol>
+void testAES(bytes::ByteArr<blockSize> input, const bytes::ByteArr<Pol::keySize>& key, const bytes::ByteArr<blockSize>& expected) {
+    SubstitutionBox subBox{};
+    KeySchedule<Pol> keySchedule{subBox, key};
+    AES<Pol> aesCipher{subBox, keySchedule};
+
+    bytes::ByteArr<blockSize> inputCopy{input};
+
+    aesCipher.encrypt(input);
+
+    if (input != expected)
+        throw std::runtime_error("AES encryption output does not match expected output.");
+
+    aesCipher.decrypt(input);
+
+    if (input != inputCopy)
+        throw std::runtime_error("AES decryption output does not match original input.");
 }
 
 int main() {
@@ -298,6 +317,40 @@ int main() {
                 parseHexStr<16>("cafaaae3e4d59b349adf6acebd10190d"),
                 parseHexStr<16>("fe4890d1e6188d0b046df344706c631e")
             }
+        );
+    });
+
+    TestSuite& aesTest{tests.createSuite("AES")};
+
+    aesTest.addCase("AES128", [] {
+        testAES<AES128>(
+            parseHexStr<16>("3243f6a8885a308d313198a2e0370734"),
+            parseHexStr<16>("2b7e151628aed2a6abf7158809cf4f3c"),
+            parseHexStr<16>("3925841d02dc09fbdc118597196a0b32")
+        );
+    });
+
+    aesTest.addCase("AES128 2", [] {
+        testAES<AES128>(
+            parseHexStr<16>("00112233445566778899aabbccddeeff"),
+            parseHexStr<16>("000102030405060708090a0b0c0d0e0f"),
+            parseHexStr<16>("69c4e0d86a7b0430d8cdb78070b4c55a")
+        );
+    });
+
+    aesTest.addCase("AES192", [] {
+        testAES<AES192>(
+            parseHexStr<16>("00112233445566778899aabbccddeeff"),
+            parseHexStr<24>("000102030405060708090a0b0c0d0e0f1011121314151617"),
+            parseHexStr<16>("dda97ca4864cdfe06eaf70a0ec0d7191")
+        );
+    });
+
+    aesTest.addCase("AES256", [] {
+        testAES<AES256>(
+            parseHexStr<16>("00112233445566778899aabbccddeeff"),
+            parseHexStr<32>("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"),
+            parseHexStr<16>("8ea2b7ca516745bfeafc49904b496089")
         );
     });
 

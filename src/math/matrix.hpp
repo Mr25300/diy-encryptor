@@ -14,7 +14,6 @@ namespace math {
 
     template <typename T, std::size_t Rows, std::size_t Cols = Rows>
     class Matrix {
-    private:
         std::array<Vector<T, Cols>, Rows> rows;
 
     public:
@@ -26,9 +25,7 @@ namespace math {
             std::array<Vector<T, Size>, Size> values{};
 
             for (std::size_t i{}; i < Size; ++i) {
-                for (std::size_t j{}; j < Size; ++j) {
-                    values[i][j] = static_cast<T>(1);
-                }
+                values[i][i] = static_cast<T>(1);
             }
 
             return Matrix<T, Size, Size>{values};
@@ -39,7 +36,7 @@ namespace math {
 
             for (std::size_t i{}; i < Rows; ++i) {
                 for (std::size_t j{}; j < Cols; ++j) {
-                    values[i][j] = initRow[(i + j) % Cols];
+                    values[i][(j + i) % Cols] = initRow[j];
                 }
             }
 
@@ -82,7 +79,7 @@ namespace math {
         }
 
         constexpr friend T operator*(const Vector<T, Cols>& vec, const Matrix<T, 1, Cols>& mat) {
-            return (vec * mat[0])[0];
+            return vec * mat[0];
         }
 
         template <std::size_t Size>
@@ -98,7 +95,7 @@ namespace math {
 
         template <std::size_t NewCols>
         constexpr Matrix<T, Rows, NewCols> operator*(const Matrix<T, Cols, NewCols>& mat) const {
-            std::array<std::array<T, NewCols>, Rows> values;
+            std::array<Vector<T, NewCols>, Rows> values;
 
             for (std::size_t i{}; i < Rows; ++i) {
                 for (std::size_t j{}; j < NewCols; ++j) {

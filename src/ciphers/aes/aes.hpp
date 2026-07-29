@@ -8,6 +8,7 @@
 #include <utils/bytes.hpp>
 
 #include <cassert>
+#include <iostream>
 
 namespace ciphers::aes {
     namespace {
@@ -34,10 +35,10 @@ namespace ciphers::aes {
         void encrypt(bytes::ByteArr<constants::blockSize>& block) const {
             StateBlock aesBlock{utils::bytesToBlock<constants::cols>(block)};
 
-            utils::addKey(aesBlock, this->keySchedule[0]);
+            utils::addKey(aesBlock, keySchedule[0]);
 
             for (std::size_t i{1}; i <= Pol::rounds; ++i) {
-                utils::subBytes(aesBlock, this->subBox);
+                utils::subBytes(aesBlock, subBox);
                 utils::shiftRows(aesBlock);
 
                 if (i != Pol::rounds) utils::mixColumns(aesBlock, mixColsMat);
@@ -57,10 +58,12 @@ namespace ciphers::aes {
                 if (i != Pol::rounds) utils::mixColumns(aesBlock, mixColsMatInv);
 
                 utils::shiftRows(aesBlock, true);
-                utils::subBytes(aesBlock, this->subBox, true);
+                utils::subBytes(aesBlock, subBox, true);
             }
 
             utils::addKey(aesBlock, keySchedule[0]);
+
+            utils::blockToBytes(aesBlock, block);
         }
     };
 }

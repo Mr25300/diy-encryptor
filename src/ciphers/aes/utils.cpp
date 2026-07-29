@@ -1,5 +1,4 @@
 #include "utils.hpp"
-
 #include "types.hpp"
 
 #include <math/gf256.hpp>

@@ -8,7 +8,6 @@
 namespace math {
     template <typename T, std::size_t Size>
     class Vector {
-    private:
         std::array<T, Size> values;
 
     public:
