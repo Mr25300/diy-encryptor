@@ -3,7 +3,9 @@
 #include <cstdint>
 #include <array>
 #include <vector>
+#include <span>
 #include <stdexcept>
+#include <cassert>
 
 namespace bytes {
     template <std::size_t N>
@@ -74,34 +76,24 @@ namespace bytes {
     }
 
     template <std::size_t N>
-    std::vector<ByteArr<N>> getChunks(const ByteVec& bytes) {
-        std::vector<ByteArr<N>> chunks;
-        chunks.reserve(bytes.size() / N);
+    std::span<ByteArr<N>> getChunkView(const ByteVec& bytes) {
+        static_assert(N > 0, "Chunk size cannot be zero.");
+        assert(bytes.size() % N == 0 && "Byte count must be a multiple of the chunk size.");
 
-        if (bytes.size() % N != 0)
-            throw std::invalid_argument("Number of bytes must be a multiple of the chunk size.");
-
-        for (std::size_t i{}; i < bytes.size() / N; ++i) {
-            ByteArr<N>& chunk{chunks.emplace_back()};
-
-            std::copy(
-                bytes.begin() + i * N, bytes.begin() + (i + 1) * N, chunk.begin()
-            );
-        }
-
-        return chunks;
+        // Avoids memory unsafety of casting to vector as the first 24 bytes of memory for a vector is overhead
+        return std::span<ByteArr<N>>(
+            // Returns first pointer in contiguous ByteVec data
+            reinterpret_cast<ByteArr<N>*>(bytes.data()),
+            bytes.size() / N
+        );
     }
 
     template <std::size_t N>
-    bytes::ByteVec getCollapsed(const std::vector<ByteArr<N>> chunks) {
-        bytes::ByteVec bytes;
-        bytes.reserve(chunks.size() * N);
-
-        for (const ByteArr<N>& chunk : chunks) {
-            bytes.insert(bytes.end(), chunk.begin(), chunk.end());
-        }
-
-        return bytes;
+    std::span<std::uint8_t> getFlatView(std::span<ByteArr<N>>& chunks) {
+        return std::span<std::uint8_t>(
+            reinterpret_cast<std::uint8_t*>(chunks.data()),
+            chunks.size() * N
+        );
     }
 
     std::uint8_t getRandByte();

@@ -8,7 +8,6 @@
 #include <utils/bytes.hpp>
 
 #include <cassert>
-#include <iostream>
 
 namespace ciphers::aes {
     namespace {
@@ -33,7 +32,7 @@ namespace ciphers::aes {
         AES(const SubstitutionBox& subBox, const KeySchedule<Pol>& keySchedule) : subBox{subBox}, keySchedule{keySchedule} {}
 
         void encrypt(bytes::ByteArr<constants::blockSize>& block) const {
-            StateBlock aesBlock{utils::bytesToBlock<constants::cols>(block)};
+            StateBlock& aesBlock{utils::getBlockView<constants::cols>(block)};
 
             utils::addKey(aesBlock, keySchedule[0]);
 
@@ -45,12 +44,10 @@ namespace ciphers::aes {
 
                 utils::addKey(aesBlock, keySchedule[i]);
             }
-
-            utils::blockToBytes(aesBlock, block);
         }
 
         void decrypt(bytes::ByteArr<constants::blockSize>& block) const {
-            StateBlock aesBlock{utils::bytesToBlock<constants::cols>(block)};
+            StateBlock& aesBlock{utils::getBlockView<constants::cols>(block)};
 
             for (std::size_t i{Pol::rounds}; i >= 1; --i) {
                 utils::addKey(aesBlock, keySchedule[i]);
@@ -62,8 +59,6 @@ namespace ciphers::aes {
             }
 
             utils::addKey(aesBlock, keySchedule[0]);
-
-            utils::blockToBytes(aesBlock, block);
         }
     };
 }

@@ -36,7 +36,7 @@ namespace ciphers::aes {
 
     public:
         KeySchedule(const SubstitutionBox& subBox, const bytes::ByteArr<Pol::keySize>& key) {
-            KeyBlock<Pol> keyBlock{utils::bytesToBlock<Pol::keyCols>(key)};
+            KeyBlock<Pol> keyBlock{utils::getBlockView<Pol::keyCols>(key)}; // Avoids mutating key's memory
             std::size_t wordCount{(Pol::rounds + 1) * constants::cols};
             std::size_t wordInd{};
 

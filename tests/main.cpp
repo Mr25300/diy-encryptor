@@ -1,3 +1,4 @@
+#include "ciphers/aes/utils.hpp"
 #include "test_framework.hpp"
 #include "test_utils.hpp"
 
@@ -31,7 +32,7 @@ void testPBKDF2(const bytes::ByteVec& key, const bytes::ByteVec& salt, std::size
 
 using ciphers::aes::constants::blockSize;
 using ciphers::aes::constants::cols;
-using ciphers::aes::utils::bytesToBlock;
+using ciphers::aes::utils::getBlockView;
 using ciphers::aes::AES128;
 using ciphers::aes::AES192;
 using ciphers::aes::AES256;
@@ -46,7 +47,7 @@ void testKeySchedule(const bytes::ByteArr<Pol::keySize>& key, const std::array<b
     KeySchedule<Pol> keySchedule{SubstitutionBox{}, key};
 
     for (std::size_t i{}; i < Pol::rounds + 1; ++i) {
-        if (keySchedule[i] != bytesToBlock<cols>(expected[i])) {
+        if (keySchedule[i] != getBlockView<cols>(expected[i])) {
             std::ostringstream ss;
             ss << "Key schedule key at round index " << i << " does not match expected key.";
 

@@ -9,18 +9,17 @@
 namespace ciphers::modes {
     template <std::size_t BlockSize>
     class CBC {
-        const padding::PaddingScheme<BlockSize>& padder;
         const ciphers::BlockCipher<BlockSize>& cipher;
         const bytes::ByteArr<BlockSize>& iv;
 
     public:
-        CBC(const padding::PaddingScheme<BlockSize>& padder, const ciphers::BlockCipher<BlockSize>& cipher, const bytes::ByteArr<BlockSize>& iv) : padder{padder}, cipher{cipher}, iv{iv} {}
+        CBC(const ciphers::BlockCipher<BlockSize>& cipher, const bytes::ByteArr<BlockSize>& iv) : cipher{cipher}, iv{iv} {}
 
         void encrypt(bytes::ByteVec& input) const {
-            this->padder.pad(input);
+            if (input.size() % BlockSize != 0)
+                throw std::invalid_argument("Input size must be a multiple of the block size.");
 
-            // TODO: Make this mutate properly with span
-            std::vector<bytes::ByteArr<BlockSize>> blocks{bytes::getChunks<BlockSize>(input)};
+            std::span<bytes::ByteArr<BlockSize>>& blocks{bytes::getChunkView<BlockSize>(input)};
             const bytes::ByteArr<BlockSize>* prevBlock{&(this->iv)};
 
             for (bytes::ByteArr<BlockSize>& block : blocks) {
@@ -29,15 +28,12 @@ namespace ciphers::modes {
 
                 prevBlock = &block;
             }
-
-            input = bytes::getCollapsed(blocks);
         }
 
         bool decrypt(bytes::ByteVec& input) const {
             if (input.size() % BlockSize != 0) return false;
 
-            // TODO: Make this mutate properly with span
-            std::vector<bytes::ByteArr<BlockSize>> blocks{bytes::getChunks<BlockSize>(input)};
+            std::span<bytes::ByteArr<BlockSize>>& blocks{bytes::getChunkView<BlockSize>(input)};
             bytes::ByteArr<BlockSize> prevBlock{this->iv};
 
             for (bytes::ByteArr<BlockSize>& block : blocks) {
@@ -48,10 +44,6 @@ namespace ciphers::modes {
 
                 prevBlock = block;
             }
-
-            input = bytes::getCollapsed(blocks);
-
-            return this->padder.unpad(input);
         }
 
     //     CBC(const std::string& text, bool encrypted) {
