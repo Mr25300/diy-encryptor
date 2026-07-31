@@ -10,6 +10,7 @@
 #include <ciphers/aes/substitution_box.hpp>
 #include <ciphers/aes/key_schedule.hpp>
 #include <ciphers/aes/aes.hpp>
+#include <ciphers/modes/cbc.hpp>
 #include <padding/pkcs7.hpp>
 
 #include <sstream>
@@ -41,6 +42,7 @@ using ciphers::aes::StateBlock;
 using ciphers::aes::SubstitutionBox;
 using ciphers::aes::KeySchedule;
 using ciphers::aes::AES;
+using ciphers::modes::CBC;
 
 template <typename Pol>
 void testKeySchedule(const bytes::ByteArr<Pol::keySize>& key, const std::array<bytes::ByteArr<blockSize>, Pol::rounds + 1>& expected) {
@@ -73,6 +75,29 @@ void testAES(bytes::ByteArr<blockSize> input, const bytes::ByteArr<Pol::keySize>
 
     if (input != inputCopy)
         throw std::runtime_error("AES decryption output does not match original input.");
+}
+
+template <typename Pol>
+void testCBC(
+    bytes::ByteVec input, const bytes::ByteArr<Pol::keySize>& key,
+    const bytes::ByteArr<blockSize>& iv, const bytes::ByteVec& expected)
+{
+    SubstitutionBox subBox{};
+    KeySchedule<Pol> keySchedule{subBox, key};
+    AES<Pol> aesCipher{subBox, keySchedule};
+    CBC<blockSize> cbcCipher{aesCipher, iv};
+
+    bytes::ByteVec inputCopy{input};
+
+    cbcCipher.encrypt(input);
+
+    if (input != expected)
+        throw std::runtime_error("CBC encryption output does not match expected output.");
+
+    cbcCipher.decrypt(input);
+
+    if (input != inputCopy)
+        throw std::runtime_error("CBC decryption output does not match original input.");
 }
 
 template <std::size_t BlockSize>
@@ -364,6 +389,44 @@ int main() {
         );
     });
 
+    TestSuite& cbcTest{tests.createSuite("CBC")};
+
+    cbcTest.addCase("Encrypting 16 bytes with AES128", [] {
+        testCBC<AES128>(
+            toBytes("Single block msg"),
+            parseHexStr<16>("06a9214036b8a15b512e03d534120006"),
+            parseHexStr<16>("3dafba429d9eb430b422da802c9fac41"),
+            parseHexStr("e353779c1079aeb82708942dbe77181a")
+        );
+    });
+
+    cbcTest.addCase("Encrypting 32 bytes with AES128", [] {
+        testCBC<AES128>(
+            parseHexStr("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"),
+            parseHexStr<16>("c286696d887c9aa0611bbb3e2025a45a"),
+            parseHexStr<16>("562e17996d093d28ddb3ba695a2e6f58"),
+            parseHexStr("d296cd94c2cccf8a3a863028b5e1dc0a7586602d253cfff91b8266bea6d61ab1")
+        );
+    });
+
+    cbcTest.addCase("Encrypting 48 bytes with AES128", [] {
+        testCBC<AES128>(
+            toBytes("This is a 48-byte message (exactly 3 AES blocks)"),
+            parseHexStr<16>("6c3ea0477630ce21a2ce334aa746c2cd"),
+            parseHexStr<16>("c782dc4c098c66cbd9cd27d825682c81"),
+            parseHexStr("d0a02b3836451753d493665d33f0e8862dea54cdb293abc7506939276772f8d5021c19216bad525c8579695d83ba2684")
+        );
+    });
+
+    cbcTest.addCase("Encrypting 64 bytes with AES128", [] {
+        testCBC<AES128>(
+            parseHexStr("a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf"),
+            parseHexStr<16>("56e47a38c5598974bc46903dba290349"),
+            parseHexStr<16>("8ce82eefbea0da3c44699ed7db51b7d9"),
+            parseHexStr("c30e32ffedc0774e6aff6af0869f71aa0f3af07a9a31a9c684db207eb0ef8e4e35907aa632c3ffdf868bb7b29d3d46ad83ce9f9a102ee99d49a53e87f4c3da55")
+        );
+    });
+
     TestSuite& pkbdf2Test{tests.createSuite("PKCS7 Padding")};
 
     pkbdf2Test.addCase("Small string and block size", [] {
@@ -386,8 +449,6 @@ int main() {
             parseHexStr("58b3a932078cfd190808080808080808")
         );
     });
-
-    TestSuite& cbcTest{tests.createSuite("CBC")};
 
     if (tests.run()) return 0;
     else return 1;

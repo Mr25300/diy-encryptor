@@ -155,11 +155,14 @@ int main(int argc, char* argv[]) {
     aes::AES<AESPol> aesCipher{subBox, keySchedule};
 
     padding::PKCS7<aes::constants::blockSize> padder{};
-    ciphers::modes::CBC<aes::constants::blockSize> cbcCipher{padder, aesCipher, cbcIV};
+    ciphers::modes::CBC<aes::constants::blockSize> cbcCipher{aesCipher, cbcIV};
 
-    if (encryptionMode == ENCRYPT) cbcCipher.encrypt(data);
-    else if (encryptionMode == DECRYPT) {
-        if (!cbcCipher.decrypt(data)) {
+    if (encryptionMode == ENCRYPT) {
+        padder.pad(data);
+        cbcCipher.encrypt(data);
+
+    } else {
+        if (!cbcCipher.decrypt(data) || !padder.unpad(data)) {
             std::cerr << "Failed to decrypt file due to corruption.\n";
 
             return 1;

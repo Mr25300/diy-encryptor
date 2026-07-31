@@ -16,14 +16,11 @@ namespace ciphers::modes {
         CBC(const ciphers::BlockCipher<BlockSize>& cipher, const bytes::ByteArr<BlockSize>& iv) : cipher{cipher}, iv{iv} {}
 
         void encrypt(bytes::ByteVec& input) const {
-            if (input.size() % BlockSize != 0)
-                throw std::invalid_argument("Input size must be a multiple of the block size.");
-
-            std::span<bytes::ByteArr<BlockSize>>& blocks{bytes::getChunkView<BlockSize>(input)};
+            std::span<bytes::ByteArr<BlockSize>> blocks{bytes::getChunkView<BlockSize>(input)};
             const bytes::ByteArr<BlockSize>* prevBlock{&(this->iv)};
 
             for (bytes::ByteArr<BlockSize>& block : blocks) {
-                bytes::getXorBytes(block, *prevBlock);
+                bytes::xorBytes(block, *prevBlock);
                 this->cipher.encrypt(block);
 
                 prevBlock = &block;
@@ -33,17 +30,19 @@ namespace ciphers::modes {
         bool decrypt(bytes::ByteVec& input) const {
             if (input.size() % BlockSize != 0) return false;
 
-            std::span<bytes::ByteArr<BlockSize>>& blocks{bytes::getChunkView<BlockSize>(input)};
+            std::span<bytes::ByteArr<BlockSize>> blocks{bytes::getChunkView<BlockSize>(input)};
             bytes::ByteArr<BlockSize> prevBlock{this->iv};
 
             for (bytes::ByteArr<BlockSize>& block : blocks) {
                 bytes::ByteArr<BlockSize> currBlock{block};
 
                 this->cipher.decrypt(block);
-                bytes::getXorBytes(block, prevBlock);
+                bytes::xorBytes(block, prevBlock);
 
-                prevBlock = block;
+                prevBlock = currBlock;
             }
+
+            return true;
         }
 
     //     CBC(const std::string& text, bool encrypted) {

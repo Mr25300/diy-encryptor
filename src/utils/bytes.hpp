@@ -76,7 +76,7 @@ namespace bytes {
     }
 
     template <std::size_t N>
-    std::span<ByteArr<N>> getChunkView(const ByteVec& bytes) {
+    std::span<ByteArr<N>> getChunkView(ByteVec& bytes) {
         static_assert(N > 0, "Chunk size cannot be zero.");
         assert(bytes.size() % N == 0 && "Byte count must be a multiple of the chunk size.");
 
@@ -84,6 +84,19 @@ namespace bytes {
         return std::span<ByteArr<N>>(
             // Returns first pointer in contiguous ByteVec data
             reinterpret_cast<ByteArr<N>*>(bytes.data()),
+            bytes.size() / N
+        );
+    }
+
+    template <std::size_t N>
+    const std::span<ByteArr<N>> getChunkView(const ByteVec& bytes) {
+        static_assert(N > 0, "Chunk size cannot be zero.");
+        assert(bytes.size() % N == 0 && "Byte count must be a multiple of the chunk size.");
+
+        // Avoids memory unsafety of casting to vector as the first 24 bytes of memory for a vector is overhead
+        return std::span<ByteArr<N>>(
+            // Returns first pointer in contiguous ByteVec data
+            reinterpret_cast<const ByteArr<N>*>(bytes.data()),
             bytes.size() / N
         );
     }
