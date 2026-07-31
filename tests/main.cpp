@@ -9,6 +9,7 @@
 #include <ciphers/aes/substitution_box.hpp>
 #include <ciphers/aes/key_schedule.hpp>
 #include <ciphers/aes/aes.hpp>
+#include <padding/pkcs7.hpp>
 
 #include <sstream>
 
@@ -71,6 +72,14 @@ void testAES(bytes::ByteArr<blockSize> input, const bytes::ByteArr<Pol::keySize>
 
     if (input != inputCopy)
         throw std::runtime_error("AES decryption output does not match original input.");
+}
+
+template <std::size_t BlockSize>
+void testPKCS7(bytes::ByteVec input, const bytes::ByteVec& expected) {
+    padding::PKCS7<BlockSize>{}.pad(input);
+
+    if (input != expected)
+        throw std::runtime_error("PKCS7 padding output does not match expected output.");
 }
 
 int main() {
@@ -353,6 +362,31 @@ int main() {
             parseHexStr<16>("8ea2b7ca516745bfeafc49904b496089")
         );
     });
+
+    TestSuite& pkbdf2Test{tests.createSuite("PKCS7 Padding")};
+
+    pkbdf2Test.addCase("Small string and block size", [] {
+        testPKCS7<8>(
+            parseHexStr("58b3a9"),
+            parseHexStr("58b3a90505050505")
+        );
+    });
+
+    pkbdf2Test.addCase("Larger string and block size", [] {
+        testPKCS7<16>(
+            parseHexStr("c3074bb2b49f5ba9a60b61306d2c"),
+            parseHexStr("c3074bb2b49f5ba9a60b61306d2c0202")
+        );
+    });
+
+    pkbdf2Test.addCase("Edge case", [] {
+        testPKCS7<8>(
+            parseHexStr("58b3a932078cfd19"),
+            parseHexStr("58b3a932078cfd190808080808080808")
+        );
+    });
+
+    TestSuite& cbcTest{tests.createSuite("CBC")};
 
     if (tests.run()) return 0;
     else return 1;
