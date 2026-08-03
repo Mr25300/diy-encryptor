@@ -236,14 +236,14 @@ int main() {
         );
     });
 
-    // pbkdf2Tests.addTestCase("Huge number of iterations", [] {
-    //     testPBKDF2<20>(
-    //         toBytes("password"),
-    //         toBytes("salt"),
-    //         16777216,
-    //         parseHexStr<20>("cf81c66fe8cfc04d1f31ecb65dab4089f7f179e8")
-    //     );
-    // });
+    pbkdf2Tests.addCase("Huge number of iterations", [] {
+        testPBKDF2<20>(
+            toBytes("password"),
+            toBytes("salt"),
+            16777216,
+            parseHexStr<20>("cf81c66fe8cfc04d1f31ecb65dab4089f7f179e8")
+        );
+    });
 
     pbkdf2Tests.addCase("Longer derived key", [] {
         testPBKDF2<25>(
@@ -272,14 +272,14 @@ int main() {
         );
     });
 
-    // pbkdf2Tests.addCase("Very long derived key with many iterations", [] {
-    //     testPBKDF2<128>(
-    //         toBytes("Password"),
-    //         toBytes("NaCl"),
-    //         80000,
-    //         parseHexStr<128>("4ddcd8f60b98be21830cee5ef22701f9641a4418d04c0414aeff08876b34ab56a1d425a1225833549adb841b51c9b3176a272bdebba1d078478f62b397f33c8d62aae85a11cdde829d89cb6ffd1ab0e63a981f8747d2f2f9fe5874165c83c168d2eed1d2d5ca4052dec2be5715623da019b8c0ec87dc36aa751c38f9893d15c3")
-    //     );
-    // });
+    pbkdf2Tests.addCase("Very long derived key with many iterations", [] {
+        testPBKDF2<128>(
+            toBytes("Password"),
+            toBytes("NaCl"),
+            80000,
+            parseHexStr<128>("4ddcd8f60b98be21830cee5ef22701f9641a4418d04c0414aeff08876b34ab56a1d425a1225833549adb841b51c9b3176a272bdebba1d078478f62b397f33c8d62aae85a11cdde829d89cb6ffd1ab0e63a981f8747d2f2f9fe5874165c83c168d2eed1d2d5ca4052dec2be5715623da019b8c0ec87dc36aa751c38f9893d15c3")
+        );
+    });
 
     pbkdf2Tests.addCase("Extremely long derived key", [] {
         testPBKDF2<256>(
@@ -355,7 +355,7 @@ int main() {
         );
     });
 
-    TestSuite& aesTest{tests.createSuite("AES")};
+    TestSuite& aesTest{tests.createSuite("AES Cipher")};
 
     aesTest.addCase("AES128", [] {
         testAES<AES128>(

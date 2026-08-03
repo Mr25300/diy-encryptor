@@ -3,12 +3,21 @@
 #include <iostream>
 
 namespace test {
+    namespace color {
+        constexpr std::string_view reset{"\033[0m"};
+        constexpr std::string_view bold{"\033[1m"};
+        constexpr std::string_view green{"\033[32m"};
+        constexpr std::string_view red{"\033[31m"};
+        constexpr std::string_view cyan{"\033[36m"};
+        constexpr std::string_view gray{"\033[90m"};
+    }
+
     TestResults TestSuite::run() const {
         std::size_t failed{};
         milliseconds msTotal{};
 
         for (const TestCase& test : tests) {
-            std::cout << "[ RUNNING ] " << test.name << '\n';
+            std::cout << "  [ RUNNING ] " << color::cyan << test.name << color::reset << '\n';
 
             try {
                 time_point t1{high_resolution_clock::now()};
@@ -20,12 +29,12 @@ namespace test {
 
                 msTotal += ms;
 
-                std::cout << "[ SUCCESS ] " << ms.count() << "ms\n";
+                std::cout << color::green << "  [ SUCCESS ] " << color::reset << ms.count() << "ms\n";
 
             } catch (const std::exception& e) {
                 ++failed;
 
-                std::cout << "[ FAILURE ] " << e.what() << '\n';
+                std::cout << color::red << "  [ FAILURE ] " << color::gray << e.what() << color::reset << '\n';
             }
         }
 
@@ -37,12 +46,19 @@ namespace test {
     }
 
     bool TestFramework::run() const {
+        const std::size_t maxSigns{20};
+        std::size_t i{1};
+
         std::size_t total{};
         std::size_t failed{};
         milliseconds msTotal{};
 
+        std::cout << "========== " << color::bold << "STARTING" << color::reset << " ==========\n";
+
         for (const TestSuite& suite : suites) {
-            std::cout << "Starting test suite \"" << suite.name << "\"\n";
+            std::string barSigns(maxSigns * i / (suites.size() + 1), '=');
+
+            std::cout << "=========> " << color::cyan << color::bold << suite.name << color::reset << '\n';
 
             TestResults results{suite.run()};
 
@@ -50,13 +66,19 @@ namespace test {
             failed += results.failed;
             msTotal += results.time;
 
-            std::cout << "Test suite \"" << suite.name << "\" " <<
-                (failed == 0 ? "passed" : "failed") << '\n';
+            std::cout << "---------> ";
+            if (results.failed == 0) std::cout << color::green << color::bold << "PASSED";
+            else std::cout << color::red << color::bold << "FAILED (" << results.failed << ')';
+            std::cout << color::reset << '\n';
+
+            ++i;
         }
 
-        std::cout << "Ran " << total << " tests\n" <<
-            (total - failed) << " passed\n" <<
-            failed << " failed\n";
+        std::cout << "========== " << color::bold << "FINISHED" << color::reset << " ==========\n"
+            << "  Tests:   " << total << '\n'
+            << "  Passed:  " << (total - failed) << '\n'
+            << "  Failed:  " << failed << '\n'
+            << "==============================\n";
 
         return failed == 0;
     }

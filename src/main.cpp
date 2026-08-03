@@ -29,16 +29,6 @@ const std::string metadataExtension{".enc.meta"};
 
 enum EncryptionMode { ENCRYPT, DECRYPT, UNDEFINED };
 
-void printBytes(bytes::ByteVec bytes) {
-    std::cout << std::hex;
-
-    for (std::uint8_t b : bytes) {
-        std::cout << static_cast<int>(b);
-    }
-
-    std::cout << '\n' << std::dec;
-}
-
 int main(int argc, char* argv[]) {
     std::string prevArg;
     std::string filePathStr;
@@ -115,9 +105,6 @@ int main(int argc, char* argv[]) {
         cbcIV = bytes::getRandBytes<aes::constants::blockSize>();
         kdfSalt = bytes::getRandBytes(kdfSaltSize);
 
-        printBytes(bytes::ByteVec(cbcIV.begin(), cbcIV.end()));
-        printBytes(kdfSalt);
-
     } else if (encryptionMode == DECRYPT) {
         if (inputPath.extension() == encryptedExtension) {
             outputPath.replace_extension("");
@@ -132,9 +119,6 @@ int main(int argc, char* argv[]) {
         std::copy(metaData.begin(), metaData.begin() + cbcIV.size(), cbcIV.begin());
         kdfSalt.insert(kdfSalt.end(), metaData.end() - kdfSaltSize, metaData.end());
         // TODO: Add error handling for corruption here too
-
-        printBytes(bytes::ByteVec(cbcIV.begin(), cbcIV.end()));
-        printBytes(kdfSalt);
     }
 
     std::vector<std::uint8_t> data{io::readFile(inputPath)};
