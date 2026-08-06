@@ -20,7 +20,7 @@ namespace aes = ciphers::aes;
 
 using AESPol = ciphers::aes::AES128;
 
-const std::size_t kdfIterations{60000}; // Should be 600000
+const std::size_t kdfIterations{600000}; // Should be 600000
 const std::size_t kdfSaltSize{32}; // In bytes
 
 const std::string encryptedExtension{".enc"};
@@ -33,10 +33,10 @@ int main(int argc, char* argv[]) {
     std::string prevArg;
     std::string filePathStr;
     std::string outputDirStr;
-    EncryptionMode encryptionMode = UNDEFINED;
-    bool deletePrev = false;
+    EncryptionMode encryptionMode{UNDEFINED};
+    bool deletePrev{false};
 
-    for (std::size_t i{1}; i < argc; ++i) {
+    for (int i{1}; i < argc; ++i) {
         char* arg{argv[i]};
         std::string argStr{std::string(arg)};
 
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::filesystem::path inputPath(filePathStr); // Make sure this exists first before doing stuff below
+    std::filesystem::path inputPath(filePathStr); // TODO: Make sure this exists first before doing stuff below
     std::filesystem::path outputPath;
     std::filesystem::path metadataPath;
 

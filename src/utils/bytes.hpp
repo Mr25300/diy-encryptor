@@ -4,7 +4,6 @@
 #include <array>
 #include <vector>
 #include <span>
-#include <stdexcept>
 #include <cassert>
 
 namespace bytes {
@@ -13,60 +12,36 @@ namespace bytes {
 
     using ByteVec = std::vector<std::uint8_t>;
 
-    template <typename C>
-    void xorBytes(C& bytes1, const C& bytes2) {
-        if (bytes1.size() != bytes2.size())
-            throw std::invalid_argument("Cannot XOR byte blocks of different lengths.");
+    using ByteView = std::span<std::uint8_t>;
+    using ConstByteView = std::span<const std::uint8_t>;
 
-        for (std::size_t i{}; i < bytes1.size(); ++i) {
-            bytes1[i] ^= bytes2[i];
-        }
-    }
+    void xorBytes(ByteView bytes1, ConstByteView bytes2);
+    void xorBytes(ByteView bytes, std::uint8_t byte);
 
-    template <typename C>
-    C getXorBytes(const C& bytes1, const C& bytes2) {
-        C res{bytes1};
+    ByteVec getXorBytes(ConstByteView bytes1, ConstByteView bytes2);
+    ByteVec getXorBytes(ConstByteView bytes, std::uint8_t byte);
 
+    template <std::size_t N>
+    ByteArr<N> getXorBytesArr(const ByteArr<N>& bytes1, const ByteArr<N>& bytes2) {
+        ByteArr<N> res{bytes1};
         xorBytes(res, bytes2);
 
         return res;
     }
 
-    template <typename C>
-    void xorBytes(C& bytes, std::uint8_t byte) {
-        for (std::uint8_t& b : bytes) {
-            b ^= byte;
-        }
-    }
-
-    template <typename C>
-    C getXorBytes(const C& bytes, std::uint8_t byte) {
-        C res{bytes};
-
+    template <std::size_t N>
+    ByteArr<N> getXorBytesArr(const ByteArr<N>& bytes, std::uint8_t byte) {
+        ByteArr<N> res{bytes};
         xorBytes(res, byte);
 
         return res;
     }
 
-    template <typename C>
-    void appendBytes(ByteVec& bytes1, const C& bytes2) {
-        bytes1.reserve(bytes1.size() + bytes2.size());
-        bytes1.insert(bytes1.end(), bytes2.begin(), bytes2.end());
-    }
-
-    template <typename C1, typename C2>
-    ByteVec getAppendBytes(const C1& bytes1, const C2& bytes2) {
-        ByteVec res;
-        res.reserve(bytes1.size() + bytes2.size());
-
-        res.insert(res.end(), bytes1.begin(), bytes1.end());
-        res.insert(res.end(), bytes2.begin(), bytes2.end());
-
-        return res;
-    }
+    void appendBytes(ByteVec& bytes1, ConstByteView bytes2);
+    ByteVec getAppendBytes(ConstByteView bytes1, ConstByteView bytes2);
 
     template <std::size_t N1, std::size_t N2>
-    ByteArr<N1 + N2> getAppendBytesArr(const ByteArr<N1> bytes1, const ByteArr<N2> bytes2) {
+    ByteArr<N1 + N2> getAppendBytesArr(const ByteArr<N1>& bytes1, const ByteArr<N2>& bytes2) {
         ByteArr<N1 + N2> res;
 
         std::copy(bytes1.begin(), bytes1.end(), res.begin());
@@ -76,7 +51,7 @@ namespace bytes {
     }
 
     template <std::size_t N>
-    std::span<ByteArr<N>> getChunkView(ByteVec& bytes) {
+    std::span<ByteArr<N>> getChunkView(ByteView bytes) {
         static_assert(N > 0, "Chunk size cannot be zero.");
         assert(bytes.size() % N == 0 && "Byte count must be a multiple of the chunk size.");
 
@@ -89,20 +64,7 @@ namespace bytes {
     }
 
     template <std::size_t N>
-    const std::span<ByteArr<N>> getChunkView(const ByteVec& bytes) {
-        static_assert(N > 0, "Chunk size cannot be zero.");
-        assert(bytes.size() % N == 0 && "Byte count must be a multiple of the chunk size.");
-
-        // Avoids memory unsafety of casting to vector as the first 24 bytes of memory for a vector is overhead
-        return std::span<ByteArr<N>>(
-            // Returns first pointer in contiguous ByteVec data
-            reinterpret_cast<const ByteArr<N>*>(bytes.data()),
-            bytes.size() / N
-        );
-    }
-
-    template <std::size_t N>
-    std::span<std::uint8_t> getFlatView(std::span<ByteArr<N>>& chunks) {
+    ByteView getFlatView(std::span<ByteArr<N>> chunks) {
         return std::span<std::uint8_t>(
             reinterpret_cast<std::uint8_t*>(chunks.data()),
             chunks.size() * N

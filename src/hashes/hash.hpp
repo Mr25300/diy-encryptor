@@ -9,6 +9,6 @@ namespace hashes {
     struct Hash {
         static_assert(BlockSize > OutputSize, "Block size must be larger than output size.");
 
-        virtual bytes::ByteArr<OutputSize> compute(const bytes::ByteVec& input) const = 0;
+        virtual bytes::ByteArr<OutputSize> compute(bytes::ConstByteView input) const = 0;
     };
 }

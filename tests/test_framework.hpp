@@ -29,7 +29,7 @@ namespace test {
     public:
         const std::string name;
  
-        TestSuite(std::string_view name, std::vector<TestCase> tests = {}) : name(name), tests{tests} {}
+        TestSuite(std::string_view name) : name(name) {}
 
         template <typename F>
         void addCase(std::string_view name, F&& func) {

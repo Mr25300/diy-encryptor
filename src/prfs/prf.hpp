@@ -7,6 +7,6 @@
 namespace prfs {
     template <std::size_t OutputSize>
     struct PRF {
-        virtual bytes::ByteArr<OutputSize> compute(const bytes::ByteVec& key, const bytes::ByteVec& text) const = 0;
+        virtual bytes::ByteArr<OutputSize> compute(bytes::ConstByteView key, bytes::ConstByteView text) const = 0;
     };
 }

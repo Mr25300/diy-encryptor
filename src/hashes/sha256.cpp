@@ -128,7 +128,7 @@ namespace {
 }
 
 namespace hashes {
-    bytes::ByteArr<32> hashes::SHA256::compute(const bytes::ByteVec& input) const {
+    bytes::ByteArr<32> hashes::SHA256::compute(bytes::ConstByteView input) const {
         std::array<std::uint32_t, 8> hCopy{vals.h};
 
         std::size_t inputWords{(input.size() >> 2) + 1}; // Divide by 4 and add an extra 1

@@ -8,6 +8,7 @@
 #include <cstdint>
 
 namespace prfs {
+    // TODO: See if OutputSize can be abstracted away and only accessed via method
     template <std::size_t BlockSize, std::size_t OutputSize>
     class HMAC : public PRF<OutputSize> {
         const hashes::Hash<BlockSize, OutputSize>& hash;
@@ -18,7 +19,7 @@ namespace prfs {
     public:
         constexpr HMAC(const hashes::Hash<BlockSize, OutputSize>& hash) : hash{hash} {}
 
-        bytes::ByteArr<OutputSize> compute(const bytes::ByteVec& key, const bytes::ByteVec& text) const {
+        bytes::ByteArr<OutputSize> compute(bytes::ConstByteView key, bytes::ConstByteView text) const {
             bytes::ByteArr<BlockSize> workingKey;
 
             if (key.size() > BlockSize) {
@@ -32,11 +33,11 @@ namespace prfs {
                 std::fill(workingKey.begin() + key.size(), workingKey.end(), 0);
             }
 
-            bytes::ByteArr<BlockSize> innerXor{bytes::getXorBytes(workingKey, ipad)};
+            bytes::ByteArr<BlockSize> innerXor{bytes::getXorBytesArr(workingKey, ipad)};
             bytes::ByteVec inner{bytes::getAppendBytes(innerXor, text)};
             bytes::ByteArr<OutputSize> innerHash{hash.compute(inner)};
 
-            bytes::ByteArr<BlockSize> outerXor{bytes::getXorBytes(workingKey, opad)};
+            bytes::ByteArr<BlockSize> outerXor{bytes::getXorBytesArr(workingKey, opad)};
             bytes::ByteVec outer{bytes::getAppendBytes(outerXor, innerHash)};
 
             return hash.compute(outer);

@@ -6,6 +6,6 @@
 
 namespace hashes {
     struct SHA256 : Hash<64, 32> {
-        bytes::ByteArr<32> compute(const bytes::ByteVec& input) const;
+        bytes::ByteArr<32> compute(bytes::ConstByteView input) const;
     };
 }

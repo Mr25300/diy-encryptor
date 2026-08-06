@@ -23,20 +23,20 @@ namespace math {
 
         static constexpr std::size_t gfGetDegree(std::uint16_t n) {
             if (n == 0) {
-                return -1;
+                return -1; // Investigate this
             } else if (n == irreduciblePolynomial) {
                 return 8;
             }
 
-            std::size_t d{0};
+            // TODO: Switch to std::bit_width
 
-            for (d = 15; d >= 0; d--) {
+            for (int d{15}; d >= 0; d--) {
                 if (n & (1 << d)) {
                     return d;
                 }
             }
 
-            return d;
+            return 0;
         }
 
         static constexpr GF256LongDivisionResult gfLongDivide(std::uint16_t dividend, std::uint16_t divisor) {

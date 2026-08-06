@@ -2,7 +2,7 @@
 
 #include <math/gf256.hpp>
 
-#include <ostream>
+// #include <ostream>
 
 namespace ciphers::aes {
     struct SubstitutionBox {
@@ -10,5 +10,5 @@ namespace ciphers::aes {
         math::GF256 subInv(math::GF256 byte) const;
     };
 
-    std::ostream& operator<<(std::ostream& stream, const SubstitutionBox& subBox);
+    // std::ostream& operator<<(std::ostream& stream, const SubstitutionBox& subBox);
 }
