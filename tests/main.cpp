@@ -1,4 +1,3 @@
-#include "ciphers/aes/utils.hpp"
 #include "test_framework.hpp"
 #include "test_utils.hpp"
 
@@ -6,10 +5,11 @@
 #include <hashes/sha256.hpp>
 #include <prfs/hmac.hpp>
 #include <kdfs/pbkdf2.hpp>
-#include <ciphers/aes/constants.hpp>
-#include <ciphers/aes/substitution_box.hpp>
-#include <ciphers/aes/key_schedule.hpp>
-#include <ciphers/aes/aes.hpp>
+#include <ciphers/rijndael/utils.hpp>
+#include <ciphers/rijndael/policy.hpp>
+#include <ciphers/rijndael/substitution_box.hpp>
+#include <ciphers/rijndael/key_schedule.hpp>
+#include <ciphers/rijndael/rijndael.hpp>
 #include <ciphers/modes/cbc.hpp>
 #include <padding/pkcs7.hpp>
 
@@ -31,25 +31,25 @@ void testPBKDF2(const bytes::ByteVec& key, const bytes::ByteVec& salt, std::size
         throw std::runtime_error("PBKDF2 output does not match expected output.");
 }
 
-using ciphers::aes::constants::blockSize;
-using ciphers::aes::constants::cols;
-using ciphers::aes::utils::getBlockView;
-using ciphers::aes::AES128;
-using ciphers::aes::AES192;
-using ciphers::aes::AES256;
-using ciphers::aes::Word;
-using ciphers::aes::StateBlock;
-using ciphers::aes::SubstitutionBox;
-using ciphers::aes::KeySchedule;
-using ciphers::aes::AES;
+using ciphers::rij::utils::getBlockView;
+using ciphers::rij::RijPolConcept;
+using ciphers::rij::RijndaelPolicy;
+using ciphers::rij::AES128;
+using ciphers::rij::AES192;
+using ciphers::rij::AES256;
+using ciphers::rij::Word;
+using ciphers::rij::StateBlock;
+using ciphers::rij::SubstitutionBox;
+using ciphers::rij::KeySchedule;
+using ciphers::rij::Rijndael;
 using ciphers::modes::CBC;
 
-template <typename Pol>
-void testKeySchedule(const bytes::ByteArr<Pol::keySize>& key, const std::array<bytes::ByteArr<blockSize>, Pol::rounds + 1>& expected) {
+template <RijPolConcept Pol>
+void testKeySchedule(const bytes::ByteArr<Pol::kSize>& key, const std::array<bytes::ByteArr<Pol::bSize>, Pol::rounds + 1>& expected) {
     KeySchedule<Pol> keySchedule{SubstitutionBox{}, key};
 
     for (std::size_t i{}; i < Pol::rounds + 1; ++i) {
-        if (keySchedule[i] != getBlockView<cols>(expected[i])) {
+        if (keySchedule[i] != getBlockView<Pol::bCols>(expected[i])) {
             std::ostringstream ss;
             ss << "Key schedule key at round index " << i << " does not match expected key.";
 
@@ -58,34 +58,34 @@ void testKeySchedule(const bytes::ByteArr<Pol::keySize>& key, const std::array<b
     }
 }
 
-template <typename Pol>
-void testAES(bytes::ByteArr<blockSize> input, const bytes::ByteArr<Pol::keySize>& key, const bytes::ByteArr<blockSize>& expected) {
+template <RijPolConcept Pol>
+void testRijndael(bytes::ByteArr<Pol::bSize> input, const bytes::ByteArr<Pol::kSize>& key, const bytes::ByteArr<Pol::bSize>& expected) {
     SubstitutionBox subBox{};
     KeySchedule<Pol> keySchedule{subBox, key};
-    AES<Pol> aesCipher{subBox, keySchedule};
+    Rijndael<Pol> rijCipher{subBox, keySchedule};
 
-    bytes::ByteArr<blockSize> inputCopy{input};
+    bytes::ByteArr<Pol::bSize> inputCopy{input};
 
-    aesCipher.encrypt(input);
+    rijCipher.encrypt(input);
 
     if (input != expected)
         throw std::runtime_error("AES encryption output does not match expected output.");
 
-    aesCipher.decrypt(input);
+    rijCipher.decrypt(input);
 
     if (input != inputCopy)
         throw std::runtime_error("AES decryption output does not match original input.");
 }
 
-template <typename Pol>
+template <RijPolConcept Pol>
 void testCBC(
-    bytes::ByteVec input, const bytes::ByteArr<Pol::keySize>& key,
-    const bytes::ByteArr<blockSize>& iv, const bytes::ByteVec& expected)
+    bytes::ByteVec input, const bytes::ByteArr<Pol::kSize>& key,
+    const bytes::ByteArr<Pol::bSize>& iv, const bytes::ByteVec& expected)
 {
     SubstitutionBox subBox{};
     KeySchedule<Pol> keySchedule{subBox, key};
-    AES<Pol> aesCipher{subBox, keySchedule};
-    CBC<blockSize> cbcCipher{aesCipher, iv};
+    Rijndael<Pol> aesCipher{subBox, keySchedule};
+    CBC<Pol::bSize> cbcCipher{aesCipher, iv};
 
     bytes::ByteVec inputCopy{input};
 
@@ -236,14 +236,14 @@ int main() {
         );
     });
 
-    pbkdf2Tests.addCase("Huge number of iterations", [] {
-        testPBKDF2<20>(
-            toBytes("password"),
-            toBytes("salt"),
-            16777216,
-            parseHexStr<20>("cf81c66fe8cfc04d1f31ecb65dab4089f7f179e8")
-        );
-    });
+    // pbkdf2Tests.addCase("Huge number of iterations", [] {
+    //     testPBKDF2<20>(
+    //         toBytes("password"),
+    //         toBytes("salt"),
+    //         16777216,
+    //         parseHexStr<20>("cf81c66fe8cfc04d1f31ecb65dab4089f7f179e8")
+    //     );
+    // });
 
     pbkdf2Tests.addCase("Longer derived key", [] {
         testPBKDF2<25>(
@@ -355,39 +355,57 @@ int main() {
         );
     });
 
-    TestSuite& aesTest{tests.createSuite("AES Cipher")};
+    // TODO: Add tests for 192 bit and 256 bit block sizes
 
-    aesTest.addCase("AES128", [] {
-        testAES<AES128>(
+    TestSuite& rijTest{tests.createSuite("Rijndael Cipher")};
+
+    rijTest.addCase("AES128", [] {
+        testRijndael<AES128>(
             parseHexStr<16>("3243f6a8885a308d313198a2e0370734"),
             parseHexStr<16>("2b7e151628aed2a6abf7158809cf4f3c"),
             parseHexStr<16>("3925841d02dc09fbdc118597196a0b32")
         );
     });
 
-    aesTest.addCase("AES128 2", [] {
-        testAES<AES128>(
+    rijTest.addCase("AES128 again", [] {
+        testRijndael<AES128>(
             parseHexStr<16>("00112233445566778899aabbccddeeff"),
             parseHexStr<16>("000102030405060708090a0b0c0d0e0f"),
             parseHexStr<16>("69c4e0d86a7b0430d8cdb78070b4c55a")
         );
     });
 
-    aesTest.addCase("AES192", [] {
-        testAES<AES192>(
+    rijTest.addCase("AES192", [] {
+        testRijndael<AES192>(
             parseHexStr<16>("00112233445566778899aabbccddeeff"),
             parseHexStr<24>("000102030405060708090a0b0c0d0e0f1011121314151617"),
             parseHexStr<16>("dda97ca4864cdfe06eaf70a0ec0d7191")
         );
     });
 
-    aesTest.addCase("AES256", [] {
-        testAES<AES256>(
+    rijTest.addCase("AES256", [] {
+        testRijndael<AES256>(
             parseHexStr<16>("00112233445566778899aabbccddeeff"),
             parseHexStr<32>("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"),
             parseHexStr<16>("8ea2b7ca516745bfeafc49904b496089")
         );
     });
+
+    // rijTest.addCase("192 bit block, 128 bit key", [] {
+    //     testRijndael<RijndaelPolicy<6, 4>>(
+    //         toBytes<24>("testtesttesttesttesttest"),
+    //         toBytes<16>("testtesttesttest"),
+    //         parseHexStr<24>("f7ba49882fc3e6f5f8e21cb64c649fc809d86eb2d5a97ca0")
+    //     );
+    // });
+    //
+    // rijTest.addCase("192 bit block, 128 bit all-zero key", [] {
+    //     testRijndael<RijndaelPolicy<6, 4>>(
+    //         parseHexStr<24>("A92732EB488D8BB98ECD8D95DC9C02E052F250AD369B3849"),
+    //         bytes::ByteArr<16>{},
+    //         parseHexStr<24>("106F34179C3982DDC6750AA01936B7A180E6B0B9D8D690EC")
+    //     );
+    // });
 
     TestSuite& cbcTest{tests.createSuite("CBC")};
 

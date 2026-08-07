@@ -6,9 +6,9 @@
 #include <prfs/hmac.hpp>
 #include <kdfs/pbkdf2.hpp>
 
-#include <ciphers/aes/substitution_box.hpp>
-#include <ciphers/aes/key_schedule.hpp>
-#include <ciphers/aes/aes.hpp>
+#include <ciphers/rijndael/substitution_box.hpp>
+#include <ciphers/rijndael/key_schedule.hpp>
+#include <ciphers/rijndael/rijndael.hpp>
 
 #include <padding/pkcs7.hpp>
 #include <ciphers/modes/cbc.hpp>
@@ -16,9 +16,11 @@
 #include <utils/bytes.hpp>
 #include <utils/io.hpp>
 
-namespace aes = ciphers::aes;
-
-using AESPol = ciphers::aes::AES128;
+using AESPol = ciphers::rij::AES128;
+using ciphers::rij::SubstitutionBox;
+using ciphers::rij::KeySchedule;
+using ciphers::rij::Rijndael;
+using ciphers::modes::CBC;
 
 const std::size_t kdfIterations{600000}; // Should be 600000
 const std::size_t kdfSaltSize{32}; // In bytes
@@ -81,7 +83,7 @@ int main(int argc, char* argv[]) {
     std::filesystem::path outputPath;
     std::filesystem::path metadataPath;
 
-    bytes::ByteArr<aes::constants::blockSize> cbcIV;
+    bytes::ByteArr<AESPol::bSize> cbcIV;
     bytes::ByteVec kdfSalt; // TODO: Switch to ByteArr by using span for KDF.compute, PRF.compute and io functions
     kdfSalt.reserve(kdfSaltSize);
 
@@ -102,7 +104,7 @@ int main(int argc, char* argv[]) {
             metadataPath += metadataExtension;
         }
 
-        cbcIV = bytes::getRandBytes<aes::constants::blockSize>();
+        cbcIV = bytes::getRandBytes<AESPol::bSize>();
         kdfSalt = bytes::getRandBytes(kdfSaltSize);
 
     } else if (encryptionMode == DECRYPT) {
@@ -130,16 +132,16 @@ int main(int argc, char* argv[]) {
 
     hashes::SHA256 sha256{};
     prfs::HMAC<64, 32> hmac{sha256};
-    kdfs::PBKDF2<32, AESPol::keySize> pbkdf2{hmac, kdfIterations};
+    kdfs::PBKDF2<32, AESPol::kSize> pbkdf2{hmac, kdfIterations};
 
-    bytes::ByteArr<AESPol::keySize> key{pbkdf2.compute(password, kdfSalt)};
+    bytes::ByteArr<AESPol::kSize> key{pbkdf2.compute(password, kdfSalt)};
 
-    aes::SubstitutionBox subBox{};
-    aes::KeySchedule<AESPol> keySchedule{subBox, key};
-    aes::AES<AESPol> aesCipher{subBox, keySchedule};
+    SubstitutionBox subBox{};
+    KeySchedule<AESPol> keySchedule{subBox, key};
+    Rijndael<AESPol> aesCipher{subBox, keySchedule};
 
-    padding::PKCS7<aes::constants::blockSize> padder{};
-    ciphers::modes::CBC<aes::constants::blockSize> cbcCipher{aesCipher, cbcIV};
+    padding::PKCS7<AESPol::bSize> padder{};
+    CBC<AESPol::bSize> cbcCipher{aesCipher, cbcIV};
 
     if (encryptionMode == ENCRYPT) {
         padder.pad(data);

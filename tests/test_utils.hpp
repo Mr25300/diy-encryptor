@@ -9,6 +9,20 @@
 namespace test {
     bytes::ByteVec toBytes(std::string_view str, std::size_t repeatCount = 1);
 
+    template <std::size_t N>
+    constexpr bytes::ByteArr<N> toBytes(std::string_view str, std::size_t repeatCount = 1) {
+        if (str.size() * repeatCount != N)
+            throw std::invalid_argument("String length does not match expected byte count.");
+
+        bytes::ByteArr<N> bytes;
+
+        for (std::size_t i{}; i < repeatCount; ++i) {
+            std::copy(str.begin(), str.end(), bytes.begin() + str.size() * i);
+        }
+
+        return bytes;
+    }
+
     constexpr std::uint8_t parseHexChr(char c) {
         if (c >= '0' && c <= '9') return c - '0';
         else if (c >= 'a' && c <= 'f') return c - 'a' + 10;

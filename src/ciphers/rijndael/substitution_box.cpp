@@ -42,7 +42,7 @@ constexpr std::array<math::GF256, 256> sboxInv{[] {
     return map;
 }()};
 
-namespace ciphers::aes {
+namespace ciphers::rij {
     math::GF256 SubstitutionBox::sub(math::GF256 byte) const { return sbox[byte.getValue()]; }
     math::GF256 SubstitutionBox::subInv(math::GF256 byte) const { return sboxInv[byte.getValue()]; }
 
