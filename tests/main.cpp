@@ -393,43 +393,179 @@ int main() {
 
     rijTest.addCase("160 bit block, 128 bit key", [] {
         testRijndael<RijndaelPolicy<5, 4>>(
-            bytes::ByteArr<20>{},
+            parseHexStr<20>("9E38B8EB1D2025A1665AD4B1F5438BB5CAE1AC3F"),
             bytes::ByteArr<16>{},
-            parseHexStr<20>("9E38B8EB1D2025A1665AD4B1F5438BB5CAE1AC3F")
+            parseHexStr<20>("939C167E7F916D45670EE21BFC939E1055054A96")
         );
     });
 
     rijTest.addCase("192 bit block, 128 bit key", [] {
         testRijndael<RijndaelPolicy<6, 4>>(
-            bytes::ByteArr<24>{},
+            parseHexStr<24>("A92732EB488D8BB98ECD8D95DC9C02E052F250AD369B3849"),
             bytes::ByteArr<16>{},
-            parseHexStr<24>("A92732EB488D8BB98ECD8D95DC9C02E052F250AD369B3849")
+            parseHexStr<24>("106F34179C3982DDC6750AA01936B7A180E6B0B9D8D690EC")
         );
     });
 
     rijTest.addCase("224 bit block, 128 bit key", [] {
         testRijndael<RijndaelPolicy<7, 4>>(
-            bytes::ByteArr<28>{},
+            parseHexStr<28>("0623522D88F7B9C63437537157F625DD5697AB628A3B9BE2549895C8"),
             bytes::ByteArr<16>{},
-            parseHexStr<28>("0623522D88F7B9C63437537157F625DD5697AB628A3B9BE2549895C8")
+            parseHexStr<28>("93F93CBDABE23415620E6990B0443D621F6AFBD6EDEFD6990A1965A8")
         );
     });
 
     rijTest.addCase("256 bit block, 128 bit key", [] {
         testRijndael<RijndaelPolicy<8, 4>>(
-            bytes::ByteArr<32>{},
+            parseHexStr<32>("A693B288DF7DAE5B1757640276439230DB77C4CD7A871E24D6162E54AF434891"),
             bytes::ByteArr<16>{},
             parseHexStr<32>("5F05857C80B68EA42CCBC759D42C28D5CD490F1D180C7A9397EE585BEA770391")
         );
     });
 
-    // rijTest.addCase("192 bit block, 128 bit all-zero key", [] {
-    //     testRijndael<RijndaelPolicy<6, 4>>(
-    //         parseHexStr<24>("A92732EB488D8BB98ECD8D95DC9C02E052F250AD369B3849"),
-    //         bytes::ByteArr<16>{},
-    //         parseHexStr<24>("106F34179C3982DDC6750AA01936B7A180E6B0B9D8D690EC")
-    //     );
-    // });
+    rijTest.addCase("128 bit block, 160 bit key", [] {
+        testRijndael<RijndaelPolicy<4, 5>>(
+            parseHexStr<16>("94B434F8F57B9780F0EFF1A9EC4C112C"),
+            bytes::ByteArr<20>{},
+            parseHexStr<16>("35A00EC955DF43417CEAC2AB2B3F3E76")
+        );
+    });
+
+    rijTest.addCase("160 bit block, 160 bit key", [] {
+        testRijndael<RijndaelPolicy<5, 5>>(
+            parseHexStr<20>("33B12AB81DB7972E8FDC529DDA46FCB529B31826"),
+            bytes::ByteArr<20>{},
+            parseHexStr<20>("97F03EB018C0BB9195BF37C6A0AECE8E4CB8DE5F")
+        );
+    });
+
+    rijTest.addCase("192 bit block, 160 bit key", [] {
+        testRijndael<RijndaelPolicy<6, 5>>(
+            parseHexStr<24>("528E2FFF6005427B67BB1ED31ECC09A69EF41531DF5BA5B2"),
+            bytes::ByteArr<20>{},
+            parseHexStr<24>("71C7687A4C93EBC35601E3662256E10115BEED56A410D7AC")
+        );
+    });
+
+    rijTest.addCase("224 bit block, 160 bit key", [] {
+        testRijndael<RijndaelPolicy<7, 5>>(
+            parseHexStr<28>("58A0C53F3822A32464704D409C2FD0521F3A93E1F6FCFD4C87F1C551"),
+            bytes::ByteArr<20>{},
+            parseHexStr<28>("D8E93EF2EB49857049D6F6E0F40B67516D2696F94013C065283F7F01")
+        );
+    });
+
+    rijTest.addCase("256 bit block, 160 bit key", [] {
+        testRijndael<RijndaelPolicy<8, 5>>(
+            parseHexStr<32>("938D36E0CB6B7937841DAB7F1668E47B485D3ACD6B3F6D598B0A9F923823331D"),
+            bytes::ByteArr<20>{},
+            parseHexStr<32>("7B44491D1B24A93B904D171F074AD69669C2B70B134A4D2D773250A4414D78BE")
+        );
+    });
+
+    rijTest.addCase("160 bit block, 192 bit key", [] {
+        testRijndael<RijndaelPolicy<5, 6>>(
+            parseHexStr<20>("33060F9D4705DDD2C7675F0099140E5A98729257"),
+            bytes::ByteArr<24>{},
+            parseHexStr<20>("012CAB64982156A5710E790F85EC442CE13C520F")
+        );
+    });
+
+    rijTest.addCase("192 bit block, 192 bit key", [] {
+        testRijndael<RijndaelPolicy<6, 6>>(
+            parseHexStr<24>("C6348BE20007BAC4A8BD62890C8147A2432E760E9A9F9AB8"),
+            bytes::ByteArr<24>{},
+            parseHexStr<24>("EB9DEF13C253F81C1FC2829426ED166A65A105C6A04CA33D")
+        );
+    });
+
+    rijTest.addCase("224 bit block, 192 bit key", [] {
+        testRijndael<RijndaelPolicy<7, 6>>(
+            parseHexStr<28>("3856B17BEA77C4611E3397066828AADDA004706A2C8009DF40A811FE"),
+            bytes::ByteArr<24>{},
+            parseHexStr<28>("160AD76A97AE2C1E05942FDE3DA2962684A92CCC74B8DC23BDE4F469")
+        );
+    });
+
+    rijTest.addCase("256 bit block, 192 bit key", [] {
+        testRijndael<RijndaelPolicy<8, 6>>(
+            parseHexStr<32>("F927363EF5B3B4984A9EB9109844152EC167F08102644E3F9028070433DF9F2A"),
+            bytes::ByteArr<24>{},
+            parseHexStr<32>("4E03389C68B2E3F623AD8F7F6BFC88613B86F334F4148029AE25F50DB144B80C")
+        );
+    });
+
+    rijTest.addCase("128 bit block, 224 bit key", [] {
+        testRijndael<RijndaelPolicy<4, 7>>(
+            parseHexStr<16>("73F8DFF62A36F3EBF31D6F73A56FF279"),
+            bytes::ByteArr<28>{},
+            parseHexStr<16>("3A72F21E10B6473EA9FF14A232E675B4")
+        );
+    });
+
+    rijTest.addCase("160 bit block, 224 bit key", [] {
+        testRijndael<RijndaelPolicy<5, 7>>(
+            parseHexStr<20>("E9F5EA0FA39BB6AD7339F28E58E2E7535F261827"),
+            bytes::ByteArr<28>{},
+            parseHexStr<20>("06EF9BC82905306D45810E12D0807796A3D338F9")
+        );
+    });
+
+    rijTest.addCase("192 bit block, 224 bit key", [] {
+        testRijndael<RijndaelPolicy<6, 7>>(
+            parseHexStr<24>("ECBE9942CD6703E16D358A829D542456D71BD3408EB23C56"),
+            bytes::ByteArr<28>{},
+            parseHexStr<24>("FD10458ED034368A34047905165B78A6F0591FFEEBF47CC7")
+        );
+    });
+
+    rijTest.addCase("224 bit block, 224 bit key", [] {
+        testRijndael<RijndaelPolicy<7, 7>>(
+            parseHexStr<28>("FE1CF0C8DDAD24E3D751933100E8E89B61CD5D31C96ABFF7209C495C"),
+            bytes::ByteArr<28>{},
+            parseHexStr<28>("515D8E2F2B9C5708F112C6DE31CACA47AFB86838B716975A24A09CD4")
+        );
+    });
+
+    rijTest.addCase("256 bit block, 224 bit key", [] {
+        testRijndael<RijndaelPolicy<8, 7>>(
+            parseHexStr<32>("BC18BF6D369C955BBB271CBCDD66C368356DBA5B33C0005550D2320B1C617E21"),
+            bytes::ByteArr<28>{},
+            parseHexStr<32>("60ABA1D2BE45D8ABFDCF97BCB39F6C17DF29985CF321BAB75E26A26100AC00AF")
+        );
+    });
+
+    rijTest.addCase("160 bit block, 256 bit key", [] {
+        testRijndael<RijndaelPolicy<5, 8>>(
+            parseHexStr<20>("30991844F72973B3B2161F1F11E7F8D9863C5118"),
+            bytes::ByteArr<32>{},
+            parseHexStr<20>("EEF8B7CC9DBE0F03A1FE9D82E9A759FD281C67E0")
+        );
+    });
+
+    rijTest.addCase("192 bit block, 256 bit key", [] {
+        testRijndael<RijndaelPolicy<6, 8>>(
+            parseHexStr<24>("17004E806FAEF168FC9CD56F98F070982075C70C8132B945"),
+            bytes::ByteArr<32>{},
+            parseHexStr<24>("BED33B0AF364DBF15F9C2F3FB24FBDF1D36129C586EEA6B7")
+        );
+    });
+
+    rijTest.addCase("224 bit block, 256 bit key", [] {
+        testRijndael<RijndaelPolicy<7, 8>>(
+            parseHexStr<28>("9BF26FAD5680D56B572067EC2FE162F449404C86303F8BE38FAB6E02"),
+            bytes::ByteArr<32>{},
+            parseHexStr<28>("658F144A34AF44AAE66CFDDAB955C483DFBCB4EE9A19A6701F158A66")
+        );
+    });
+
+    rijTest.addCase("256 bit block, 256 bit key", [] {
+        testRijndael<RijndaelPolicy<8, 8>>(
+            parseHexStr<32>("C6227E7740B7E53B5CB77865278EAB0726F62366D9AABAD908936123A1FC8AF3"),
+            bytes::ByteArr<32>{},
+            parseHexStr<32>("9843E807319C32AD1EA3935EF56A2BA96E4BF19C30E47D88A2B97CBBF2E159E7")
+        );
+    });
 
     TestSuite& cbcTest{tests.createSuite("CBC")};
 
