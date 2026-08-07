@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstddef>
+#include <bit>
 #include <ostream>
 
 namespace math {
@@ -22,34 +23,21 @@ namespace math {
         static constexpr std::uint16_t irreduciblePolynomial{0b100011011};
 
         static constexpr std::size_t gfGetDegree(std::uint16_t n) {
-            if (n == 0) {
-                return -1; // Investigate this
-            } else if (n == irreduciblePolynomial) {
-                return 8;
-            }
+            if (n == 0) return 0;
 
-            // TODO: Switch to std::bit_width
-
-            for (int d{15}; d >= 0; d--) {
-                if (n & (1 << d)) {
-                    return d;
-                }
-            }
-
-            return 0;
+            return std::bit_width(n) - 1;
         }
 
         static constexpr GF256LongDivisionResult gfLongDivide(std::uint16_t dividend, std::uint16_t divisor) {
-            if (divisor == 0) {
-                return {0, 0};
-            }
+            if (dividend == 0 || divisor == 0) return {0, 0};
 
             std::size_t dividendDeg{gfGetDegree(dividend)};
             const std::size_t divisorDeg{gfGetDegree(divisor)};
 
             std::uint8_t quotient{0};
 
-            while (dividendDeg >= divisorDeg) {
+            // Dividend must not be 0, otherwise the degree may match the degree of a divisor of 1, resulting in an infinite loop
+            while (dividend > 0 && dividendDeg >= divisorDeg) {
                 std::size_t degDiff{dividendDeg - divisorDeg};
 
                 if (degDiff >= 16) break;
