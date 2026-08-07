@@ -18,8 +18,8 @@ namespace ciphers::rij {
     template <std::size_t BCols, std::size_t KCols>
     struct RijndaelPolicy {
         // Generalize this to Rijndael and add static assertions for specifications (i.e. block size)
-        static_assert(BCols == 4 || BCols == 6 || BCols == 8, "Invalid column count for Rijndael specifications.");
-        static_assert(KCols == 4 || KCols == 6 || KCols == 8, "Invalid key column count for Rijndael specifications.");
+        static_assert(BCols >= 4 && BCols <= 8, "Invalid column count for Rijndael specifications.");
+        static_assert(KCols >= 4 && BCols <= 8, "Invalid key column count for Rijndael specifications.");
 
         static constexpr std::size_t bCols{BCols};
         static constexpr std::size_t bSize{bCols * rows};

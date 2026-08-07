@@ -47,12 +47,12 @@ namespace ciphers::rij::utils {
     void shiftRows(StateBlock<Pol>& block, bool invDir = false) {
         StateBlock<Pol> temp{block};
 
-        for (std::size_t i{}; i < rows; ++i) {
+        for (std::size_t i{1}; i < rows; ++i) { // Start at 1 since first row is not shifted
             std::size_t offset{i};
 
             if (
-                // Pol::bCols == 7 && i > rows / 2 || // Unnecessary case
-                Pol::bCols == 8 && i >= rows / 2
+                (Pol::bCols == 7 && i >= rows - 1) ||
+                (Pol::bCols == 8 && i >= rows - 2)
             ) {
                 offset += 1;
             }

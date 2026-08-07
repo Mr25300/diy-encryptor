@@ -391,14 +391,38 @@ int main() {
         );
     });
 
-    // rijTest.addCase("192 bit block, 128 bit key", [] {
-    //     testRijndael<RijndaelPolicy<6, 4>>(
-    //         toBytes<24>("testtesttesttesttesttest"),
-    //         toBytes<16>("testtesttesttest"),
-    //         parseHexStr<24>("f7ba49882fc3e6f5f8e21cb64c649fc809d86eb2d5a97ca0")
-    //     );
-    // });
-    //
+    rijTest.addCase("160 bit block, 128 bit key", [] {
+        testRijndael<RijndaelPolicy<5, 4>>(
+            bytes::ByteArr<20>{},
+            bytes::ByteArr<16>{},
+            parseHexStr<20>("9E38B8EB1D2025A1665AD4B1F5438BB5CAE1AC3F")
+        );
+    });
+
+    rijTest.addCase("192 bit block, 128 bit key", [] {
+        testRijndael<RijndaelPolicy<6, 4>>(
+            bytes::ByteArr<24>{},
+            bytes::ByteArr<16>{},
+            parseHexStr<24>("A92732EB488D8BB98ECD8D95DC9C02E052F250AD369B3849")
+        );
+    });
+
+    rijTest.addCase("224 bit block, 128 bit key", [] {
+        testRijndael<RijndaelPolicy<7, 4>>(
+            bytes::ByteArr<28>{},
+            bytes::ByteArr<16>{},
+            parseHexStr<28>("0623522D88F7B9C63437537157F625DD5697AB628A3B9BE2549895C8")
+        );
+    });
+
+    rijTest.addCase("256 bit block, 128 bit key", [] {
+        testRijndael<RijndaelPolicy<8, 4>>(
+            bytes::ByteArr<32>{},
+            bytes::ByteArr<16>{},
+            parseHexStr<32>("5F05857C80B68EA42CCBC759D42C28D5CD490F1D180C7A9397EE585BEA770391")
+        );
+    });
+
     // rijTest.addCase("192 bit block, 128 bit all-zero key", [] {
     //     testRijndael<RijndaelPolicy<6, 4>>(
     //         parseHexStr<24>("A92732EB488D8BB98ECD8D95DC9C02E052F250AD369B3849"),
