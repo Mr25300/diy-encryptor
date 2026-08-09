@@ -26,7 +26,7 @@ constexpr std::array<math::GF256, 256> sbox{[] {
     std::array<math::GF256, 256> map{};
 
     for (std::size_t i{}; i < 256; ++i) {
-        map[i] = getTransformedByte(static_cast<std::uint8_t>(i));
+        map[i] = getTransformedByte(i);
     }
 
     return map;
@@ -36,7 +36,7 @@ constexpr std::array<math::GF256, 256> sboxInv{[] {
     std::array<math::GF256, 256> map{};
 
     for (std::size_t i{}; i < 256; ++i) {
-        map[sbox[i].getValue()] = static_cast<math::GF256>(i);
+        map[sbox[i].getValue()] = i;
     }
 
     return map;

@@ -102,14 +102,18 @@ namespace math {
         constexpr bool operator==(const Vector<T, Size>& vec) const { return values == vec.values; }
         constexpr bool operator!=(const Vector<T, Size>& vec) const { return values == vec.values; }
 
-        friend std::ostream& operator<<(std::ostream& stream, const Vector<T, Size>& vector) {
-            for (std::size_t i{}; i < Size; ++i) {
-                if (i > 0) stream << ", ";
+        friend std::ostream& operator<<(std::ostream& os, const Vector<T, Size>& vec) {
+            os << '[';
 
-                stream << vector.values[i];
+            for (std::size_t i{}; i < Size; ++i) {
+                if (i > 0) os << ", ";
+
+                os << vec.values[i];
             }
 
-            return stream;
+            os << ']';
+
+            return os;
         }
     };
 }

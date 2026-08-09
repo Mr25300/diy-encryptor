@@ -11,28 +11,20 @@ namespace math {
         std::uint8_t remainder;
     };
 
-    enum class GFFormat {
-        Hex,
-        Binary,
-        Char,
-        Int,
-        Poly
-    };
-
     class GF256 {
         static constexpr std::uint16_t irreduciblePolynomial{0b100011011};
 
-        static constexpr std::size_t gfGetDegree(std::uint16_t n) {
+        static constexpr std::size_t getDegree(std::uint16_t n) {
             if (n == 0) return 0;
 
             return std::bit_width(n) - 1;
         }
 
-        static constexpr GF256LongDivisionResult gfLongDivide(std::uint16_t dividend, std::uint16_t divisor) {
+        static constexpr GF256LongDivisionResult longDivide(std::uint16_t dividend, std::uint16_t divisor) {
             if (dividend == 0 || divisor == 0) return {0, 0};
 
-            std::size_t dividendDeg{gfGetDegree(dividend)};
-            const std::size_t divisorDeg{gfGetDegree(divisor)};
+            std::size_t dividendDeg{getDegree(dividend)};
+            const std::size_t divisorDeg{getDegree(divisor)};
 
             std::uint8_t quotient{0};
 
@@ -40,18 +32,16 @@ namespace math {
             while (dividend > 0 && dividendDeg >= divisorDeg) {
                 std::size_t degDiff{dividendDeg - divisorDeg};
 
-                if (degDiff >= 16) break;
-
                 dividend ^= static_cast<std::uint16_t>(divisor << degDiff);
                 quotient ^= static_cast<std::uint8_t>(1U << degDiff);
 
-                dividendDeg = gfGetDegree(dividend);
+                dividendDeg = getDegree(dividend);
             }
 
             return {quotient, static_cast<std::uint8_t>(dividend)};
         }
 
-        static constexpr std::uint8_t gfMultiply(std::uint16_t multiplier, std::uint8_t multiplicand) {
+        static constexpr std::uint8_t multiply(std::uint16_t multiplier, std::uint8_t multiplicand) {
             std::uint16_t product{0};
 
             for (std::size_t i{}; i < 8; ++i) {
@@ -62,10 +52,8 @@ namespace math {
                 multiplicand >>= 1;
             }
 
-            return gfLongDivide(product, irreduciblePolynomial).remainder;
+            return longDivide(product, irreduciblePolynomial).remainder;
         }
-
-        static constexpr char hexDigits[]{"0123456789ABCDEF"};
 
         std::uint8_t value{};
 
@@ -78,8 +66,7 @@ namespace math {
         constexpr GF256 operator-() const { return *this; }
 
         constexpr GF256 inv() const { // Utilizes euclidean algorithm while keeping track of coefficients and ensuring that the Bezout identity is satisfied for the remainder at each step
-            if (value == 0) return 0;
-            if (value == 1) return 1;
+            if (value == 0 || value == 1) return *this;
 
             std::uint16_t prevRemainder{irreduciblePolynomial}; // r0
             std::uint8_t remainder{value}; // r1
@@ -87,9 +74,9 @@ namespace math {
             std::uint8_t coeff{1}; // n_1, where m_1 * a + n_1 * b = r_1 (a = value, b = irreducible polynomial)
 
             while (remainder != 0) {
-                GF256LongDivisionResult result{gfLongDivide(prevRemainder, remainder)};
+                GF256LongDivisionResult result{longDivide(prevRemainder, remainder)};
                 std::uint8_t newCoeff{prevCoeff};
-                newCoeff ^= gfMultiply(coeff, result.quotient);
+                newCoeff ^= multiply(coeff, result.quotient);
 
                 // (r0, r1) = (r1, r0 % r1)
                 prevRemainder = remainder; // r0 = r1
@@ -102,9 +89,7 @@ namespace math {
             return prevCoeff; // n_0, where m_0 * a + n_0 * b = 1 --> gcd(a, b)
         }
 
-        constexpr GF256 operator+(GF256 other) const {
-            return GF256{static_cast<std::uint8_t>(value ^ other.value)};
-        }
+        constexpr GF256 operator+(GF256 other) const { return value ^ other.value; }
 
         constexpr GF256& operator+=(GF256 other) {
             value ^= other.value;
@@ -112,9 +97,7 @@ namespace math {
             return *this;
         }
 
-        constexpr GF256 operator-(GF256 other) const {
-            return GF256{static_cast<std::uint8_t>(value ^ other.value)};
-        }
+        constexpr GF256 operator-(GF256 other) const { return value ^ other.value; }
 
         constexpr GF256& operator-=(GF256 other) {
             value ^= other.value;
@@ -122,22 +105,18 @@ namespace math {
             return *this;
         }
 
-        constexpr GF256 operator*(GF256 other) const {
-            return GF256{gfMultiply(value, other.value)};
-        }
+        constexpr GF256 operator*(GF256 other) const { return multiply(value, other.value); }
 
         constexpr GF256& operator*=(GF256 other) {
-            value = gfMultiply(value, other.value);
+            value = multiply(value, other.value);
 
             return *this;
         }
 
-        constexpr GF256 operator/(GF256 other) const {
-            return *this * other.inv();
-        }
+        constexpr GF256 operator/(GF256 other) const { return multiply(value, other.inv().value); }
 
         constexpr GF256& operator/=(GF256 other) {
-            *this *= other.inv();
+            value = multiply(value, other.inv().value);
 
             return *this;
         }
@@ -145,8 +124,12 @@ namespace math {
         constexpr bool operator==(GF256 other) const { return value == other.value; }
         constexpr bool operator!=(GF256 other) const { return value != other.value; }
 
-        // TODO: Remove below and make operator<< use state to manage format
-        void print(std::ostream& stream, GFFormat format = GFFormat::Hex) const;
         friend std::ostream& operator<<(std::ostream& stream, GF256 number);
     };
+
+    std::ostream& gfHex(std::ostream& os);
+    std::ostream& gfBin(std::ostream& os);
+    std::ostream& gfChr(std::ostream& os);
+    std::ostream& gfInt(std::ostream& os);
+    std::ostream& gfPoly(std::ostream& os);
 }

@@ -1,67 +1,91 @@
 #include "gf256.hpp"
 
+#include <iomanip>
 #include <bitset>
 
+enum class GFFormat {
+    Hex,
+    Binary,
+    Char,
+    Int,
+    Polynomial
+};
+
+static int getGFFormatIndex() {
+    static int index{std::ios_base::xalloc()};
+
+    return index;
+}
+
+static std::ostream& setIWord(std::ostream& os, GFFormat type) {
+    os.iword(getGFFormatIndex()) = static_cast<int>(type);
+
+    return os;
+}
+
+static GFFormat getIWord(std::ostream& os) {
+    return static_cast<GFFormat>(os.iword(getGFFormatIndex()));
+}
+
 namespace math {
-    void GF256::print(std::ostream& stream, GFFormat format) const {
-        switch(format) {
+    std::ostream& gfHex(std::ostream& os) { return setIWord(os, GFFormat::Hex); }
+    std::ostream& gfBin(std::ostream& os) { return setIWord(os, GFFormat::Binary); }
+    std::ostream& gfChr(std::ostream& os) { return setIWord(os, GFFormat::Char); }
+    std::ostream& gfInt(std::ostream& os) { return setIWord(os, GFFormat::Int); }
+    std::ostream& gfPoly(std::ostream& os) { return setIWord(os, GFFormat::Polynomial); }
+
+    std::ostream& operator<<(std::ostream& os, GF256 number) {
+        switch(getIWord(os)) {
             case GFFormat::Hex: {
-                stream << "0x" << hexDigits[value >> 4] << hexDigits[value & 0b1111];
+                os << "0x" << std::hex << std::setw(2) << std::setfill('0')
+                    << static_cast<int>(number.value) << std::dec;
 
                 break;
             }
             case GFFormat::Binary: {
-                stream << "0b" << std::bitset<8>(value).to_string();
+                os << "0b" << std::bitset<8>(number.value).to_string();
 
                 break;
             }
             case GFFormat::Char: {
-                stream << static_cast<char>(value);
+                os << static_cast<char>(number.value);
 
                 break;
             }
             case GFFormat::Int: {
-                stream << std::to_string(value);
+                os << static_cast<int>(number.value);
 
                 break;
             }
-            case GFFormat::Poly: {
-                bool firstPlaced = false;
+            case GFFormat::Polynomial: {
+                bool firstPlaced{false};
 
-                if (value == 0) {
-                    stream << '0';
+                if (number.value == 0) {
+                    os << '0';
 
                     break;
                 }
 
-                for (int i = 7; i >= 0; i--) {
-                    if (value & (1 << i)) {
-                        if (firstPlaced) {
-                            stream << " + ";
-                        }
+                std::uint8_t bitPos{0x80};
+
+                for (int i{7}; i >= 0; --i) {
+                    if (number.value & bitPos) {
+                        if (firstPlaced) os << " + ";
 
                         firstPlaced = true;
 
-                        if (i == 0) {
-                            stream << '1';
-                        } else if (i == 1) {
-                            stream << 'x';
-                        } else {
-                            stream << "x^" << std::to_string(i);
-                        }
+                        if (i == 0) os << '1';
+                        else if (i == 1) os << 'x';
+                        else os << "x^" << static_cast<int>(i);
                     }
+
+                    bitPos >>= 1;
                 }
 
                 break;
             }
-            default:
-                throw std::invalid_argument("Unknown format enum value");
         }
-    }
 
-    std::ostream& operator<<(std::ostream& stream, GF256 number) {
-        number.print(stream);
-
-        return stream;
+        return os;
     }
 }

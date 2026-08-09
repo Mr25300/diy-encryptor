@@ -123,7 +123,48 @@ namespace math {
         constexpr bool operator!=(const Matrix<T, Rows, Cols>& mat) const { return rows != mat.rows; }
 
         template <std::size_t AugCols>
-        constexpr bool rowReduce(Matrix<T, Rows, AugCols>& aug);
+        constexpr bool rowReduce(Matrix<T, Rows, AugCols>& aug) {
+            std::size_t currentPivotRow{0};
+
+            for (std::size_t pivotCol{}; pivotCol < Cols; ++pivotCol) {
+                for (std::size_t rowInd{currentPivotRow}; rowInd < Rows; ++rowInd) {
+                    T pivot{rows[rowInd][pivotCol]};
+
+                    if (pivot != 0) {
+                        if (rowInd != currentPivotRow) {
+                            std::swap(rows[rowInd], rows[currentPivotRow]);
+                            std::swap(aug[rowInd], aug[currentPivotRow]);
+                        }
+
+                        Vector<T, Cols>& pivotRow{rows[currentPivotRow]};
+                        Vector<T, AugCols>& augPivotRow{aug[currentPivotRow]};
+
+                        pivotRow /= pivot;
+                        augPivotRow /= pivot;
+
+                        for (std::size_t i{}; i < Rows; ++i) {
+                            if (i == currentPivotRow) continue;
+
+                            Vector<T, Cols>& otherRow{rows[i]};
+                            Vector<T, AugCols>& augOtherRow{aug[i]};
+
+                            T factor{otherRow[pivotCol]};
+
+                            if (factor == 0) continue;
+
+                            otherRow -= pivotRow * factor;
+                            augOtherRow -= augPivotRow * factor;
+                        }
+
+                        ++currentPivotRow;
+
+                        break;
+                    }
+                }
+            }
+
+            return currentPivotRow < Rows; // Whether or not this matrix is singular
+        }
 
         template <std::size_t Size>
         constexpr InverseResult<T, Size> getInverse() const {
@@ -134,68 +175,14 @@ namespace math {
             return {inverse, isSingular};
         }
 
-        friend std::ostream& operator<<(std::ostream& stream, const Matrix<T, Rows, Cols>& mat) {
+        friend std::ostream& operator<<(std::ostream& os, const Matrix<T, Rows, Cols>& mat) {
             for (std::size_t i{}; i < Rows; ++i) {
-                if (i > 0) stream << '\n';
+                if (i > 0) os << '\n';
 
-                stream << '[' << mat.rows[i] << ']';
+                os << '[' << mat.rows[i] << ']';
             }
 
-            return stream;
+            return os;
         }
     };
-
-    template<typename T, std::size_t Rows, std::size_t Cols>
-    template<std::size_t AugCols>
-    constexpr bool Matrix<T, Rows, Cols>::rowReduce(Matrix<T, Rows, AugCols>& aug) {
-        std::size_t currentPivotRow{0};
-        T zero{static_cast<T>(0)};
-
-        for (std::size_t pivotCol{}; pivotCol < Cols; ++pivotCol) {
-            for (std::size_t rowInd{currentPivotRow}; rowInd < Rows; ++rowInd) {
-                T pivot{rows[rowInd][pivotCol]};
-
-                if (pivot != zero) {
-                    if (rowInd != currentPivotRow) {
-                        std::swap(rows[rowInd], rows[currentPivotRow]);
-                        std::swap(aug[rowInd], aug[currentPivotRow]);
-                        // Vector<T, Size> tempRow{A.rows[rowInd]};
-                        // Vector<T, Size> invTempRow{rows[rowInd]};
-                        //
-                        // A.rows[rowInd] = A.rows[currentPivotRow];
-                        // A.rows[currentPivotRow] = tempRow;
-                        //
-                        // I.rows[rowInd] = I.rows[currentPivotRow];
-                        // I.rows[currentPivotRow] = invTempRow;
-                    }
-
-                    Vector<T, Cols>& pivotRow{rows[currentPivotRow]};
-                    Vector<T, AugCols>& augPivotRow{aug[currentPivotRow]};
-
-                    pivotRow /= pivot;
-                    augPivotRow /= pivot;
-
-                    for (std::size_t i{}; i < Rows; ++i) {
-                        if (i == currentPivotRow) continue;
-
-                        Vector<T, Cols>& otherRow{rows[i]};
-                        Vector<T, AugCols>& augOtherRow{aug[i]};
-
-                        T factor{otherRow[pivotCol]};
-
-                        if (factor == zero) continue;
-
-                        otherRow -= pivotRow * factor;
-                        augOtherRow -= augPivotRow * factor;
-                    }
-
-                    currentPivotRow += 1;
-
-                    break;
-                }
-            }
-        }
-
-        return currentPivotRow < Rows; // Whether or not this matrix is singular
-    }
 }

@@ -1,4 +1,3 @@
-- Fix printability
 - Make PBKDF2, HMAC and SHA256 faster
 - Fix formatting for constructors/functions with many parameters (make neovim do it automatically)
 - Improve GF256 printing in blocks and vectors by manipulating cout stream state (similar to std::cout << std::hex) instead of passing in GFFormat

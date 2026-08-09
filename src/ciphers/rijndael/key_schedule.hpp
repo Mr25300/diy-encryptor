@@ -23,11 +23,11 @@ namespace ciphers::rij {
         static constexpr std::array<math::GF256, rConCount> roundConstants{[] {
             std::array<math::GF256, rConCount> constants;
 
-            math::GF256 constant{1};
+            math::GF256 c{1};
 
             for (std::size_t i{}; i < rConCount; ++i) {
-                constants[i] = constant;
-                constant *= 2;
+                constants[i] = c;
+                c *= 2;
             }
 
             return constants;
