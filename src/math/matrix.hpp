@@ -179,7 +179,7 @@ namespace math {
             for (std::size_t i{}; i < Rows; ++i) {
                 if (i > 0) os << '\n';
 
-                os << '[' << mat.rows[i] << ']';
+                os << mat.rows[i];
             }
 
             return os;
