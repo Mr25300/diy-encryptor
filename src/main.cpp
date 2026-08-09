@@ -1,7 +1,3 @@
-#include <iostream>
-#include <filesystem>
-#include <string>
-
 #include <hashes/sha256.hpp>
 #include <prfs/hmac.hpp>
 #include <kdfs/pbkdf2.hpp>
@@ -15,6 +11,10 @@
 
 #include <utils/bytes.hpp>
 #include <utils/io.hpp>
+
+#include <iostream>
+#include <filesystem>
+#include <string>
 
 using AESPol = ciphers::rij::AES128;
 using ciphers::rij::SubstitutionBox;

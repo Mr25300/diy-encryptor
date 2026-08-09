@@ -89,42 +89,42 @@ namespace math {
             return prevCoeff; // n_0, where m_0 * a + n_0 * b = 1 --> gcd(a, b)
         }
 
-        constexpr GF256 operator+(GF256 other) const { return value ^ other.value; }
+        constexpr GF256 operator+(GF256 num) const { return value ^ num.value; }
 
-        constexpr GF256& operator+=(GF256 other) {
-            value ^= other.value;
-
-            return *this;
-        }
-
-        constexpr GF256 operator-(GF256 other) const { return value ^ other.value; }
-
-        constexpr GF256& operator-=(GF256 other) {
-            value ^= other.value;
+        constexpr GF256& operator+=(GF256 num) {
+            value ^= num.value;
 
             return *this;
         }
 
-        constexpr GF256 operator*(GF256 other) const { return multiply(value, other.value); }
+        constexpr GF256 operator-(GF256 num) const { return value ^ num.value; }
 
-        constexpr GF256& operator*=(GF256 other) {
-            value = multiply(value, other.value);
-
-            return *this;
-        }
-
-        constexpr GF256 operator/(GF256 other) const { return multiply(value, other.inv().value); }
-
-        constexpr GF256& operator/=(GF256 other) {
-            value = multiply(value, other.inv().value);
+        constexpr GF256& operator-=(GF256 num) {
+            value ^= num.value;
 
             return *this;
         }
 
-        constexpr bool operator==(GF256 other) const { return value == other.value; }
-        constexpr bool operator!=(GF256 other) const { return value != other.value; }
+        constexpr GF256 operator*(GF256 num) const { return multiply(value, num.value); }
 
-        friend std::ostream& operator<<(std::ostream& stream, GF256 number);
+        constexpr GF256& operator*=(GF256 num) {
+            value = multiply(value, num.value);
+
+            return *this;
+        }
+
+        constexpr GF256 operator/(GF256 num) const { return multiply(value, num.inv().value); }
+
+        constexpr GF256& operator/=(GF256 num) {
+            value = multiply(value, num.inv().value);
+
+            return *this;
+        }
+
+        constexpr bool operator==(GF256 num) const { return value == num.value; }
+        constexpr bool operator!=(GF256 num) const { return value != num.value; }
+
+        friend std::ostream& operator<<(std::ostream& stream, GF256 num);
     };
 
     std::ostream& gfHex(std::ostream& os);

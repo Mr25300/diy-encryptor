@@ -45,20 +45,4 @@ constexpr std::array<math::GF256, 256> sboxInv{[] {
 namespace ciphers::rij {
     math::GF256 SubstitutionBox::sub(math::GF256 byte) const { return sbox[byte.getValue()]; }
     math::GF256 SubstitutionBox::subInv(math::GF256 byte) const { return sboxInv[byte.getValue()]; }
-
-    // std::ostream& operator<<(std::ostream& stream, const SubstitutionBox& subBox) {
-    //     for (std::size_t i{}; i < 16; ++i) {
-    //         if (i > 0) stream << '\n';
-    //
-    //         for (std::size_t j{}; j < 16; ++j) {
-    //             stream << sbox[(i << 4) ^ j];
-    //
-    //             if (i != 15 || j != 15) {
-    //                 stream << ',' << ' ';
-    //             }
-    //         }
-    //     }
-    //
-    //     return stream;
-    // }
 }

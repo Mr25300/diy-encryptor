@@ -16,9 +16,9 @@ namespace {
         unsigned int current{2};
 
         while (count < N) {
-            bool isPrime = true;
+            bool isPrime{true};
 
-            for (std::size_t i{2}; i * i <= current; i++) {
+            for (std::size_t i{2}; i * i <= current; ++i) {
                 if (current % i == 0) {
                     isPrime = false;
 
@@ -28,10 +28,10 @@ namespace {
 
             if (isPrime) {
                 primes[count] = current;
-                count += 1;
+                ++count;
             }
 
-            current += 1;
+            ++current;
         }
 
         return primes;
@@ -96,8 +96,6 @@ constexpr SHA256Values vals{[] {
 
 namespace {
     std::uint32_t rightRot(std::uint32_t word, std::uint32_t amount) {
-        if (amount == 0) return word;
-
         amount &= 31;
 
         return word >> amount | word << (32 - amount);
@@ -106,6 +104,7 @@ namespace {
     std::uint32_t ch(std::uint32_t x, std::uint32_t y, std::uint32_t z) {
         return (x & y) ^ (~x & z);
     }
+
     std::uint32_t maj(std::uint32_t x, std::uint32_t y, std::uint32_t z) {
         return (x & y) ^ (x & z) ^ (y & z);
     }
@@ -131,55 +130,50 @@ namespace hashes {
     bytes::ByteArr<32> hashes::SHA256::compute(bytes::ConstByteView input) const {
         std::array<std::uint32_t, 8> hCopy{vals.h};
 
-        std::size_t inputWords{(input.size() >> 2) + 1}; // Divide by 4 and add an extra 1
+        std::uint64_t inputBits{static_cast<std::uint64_t>(input.size()) * 8};
 
-        std::vector<std::array<std::uint32_t, 16>> chunks;
-        chunks.reserve((inputWords >> 4) + 1);
+        // If input.size() is a multiple of 4, we add 1 word since we need another word to store the appended 1 bit
+        // Otherwise, we add 1 word since there are remaining bytes erased by flooring, and there will be at least 1 byte left in the word to append a 1 bit
+        std::size_t wordCount{input.size() / 4 + 1};
 
-        for (std::size_t i{}; i < inputWords; ++i) { // Loop through words (32 bit segments)
-            std::size_t chunkIndex{i >> 4}; // Divide by 16
+        // If wordCount is a multiple of 16, we add 1 chunk since we need another chunk to store the last 64 bit bit length
+        // Otherwise, we add 1 chunk since there are remaining words erased by flooring
+        std::size_t chunkCount{wordCount / 16 + 1};
+        std::size_t wordMod{wordCount % 16};
+        if (wordMod > 14) ++chunkCount;
 
-            if (chunkIndex >= chunks.size()) chunks.emplace_back(); // Triggers zero-initialization
+        for (std::size_t i{}; i < chunkCount; ++i) {
+            std::array<std::uint32_t, 64> w{}; // Message schedule
+            std::span<std::uint32_t, 16> chunk{w.data(), 16};
 
-            std::array<std::uint32_t, 16>& chunk{chunks[chunkIndex]};
-            std::uint32_t word{0};
+            for (std::size_t j{}; j < 16; ++j) {
+                for (std::size_t k{}; k < 4; ++k) {
+                    std::size_t byteIndex{i * 64 + j * 4 + k};
 
-            for (size_t j{}; j < 4; ++j) {
-                std::size_t byteIndex{i * 4 + j};
-
-                if (byteIndex < input.size()) {
-                    word |= static_cast<std::uint32_t>(input[i * 4 + j]) << (3 - j) * 8;
-                } else if (byteIndex == input.size()) {
-                    word |= 1 << ((4 - j) * 8 - 1); // Append single '1' bit
-                } else {
-                    break;
+                    if (byteIndex < input.size()) {
+                        chunk[j] |= static_cast<std::uint32_t>(input[byteIndex]) << (24 - k * 8);
+                    } else if (byteIndex == input.size()) {
+                        chunk[j] |= 1 << (31 - k * 8); // Append single 1 bit
+                    } else {
+                        break;
+                    }
                 }
             }
 
-            chunk[i % 16] = word;
-        }
+            if (i == chunkCount - 1) {
+                chunk[14] = static_cast<std::uint32_t>(inputBits >> 32);
+                chunk[15] = static_cast<std::uint32_t>(inputBits);
+            }
 
-        if (inputWords % 16 > 16 - 2) chunks.emplace_back(); // 2 words needed for 64 bit size
-
-        std::array<std::uint32_t, 16>& lastChunk{chunks[chunks.size() - 1]};
-        std::uint64_t inputBits{static_cast<std::uint64_t>(input.size()) * 8};
-
-        lastChunk[14] = static_cast<std::int32_t>(inputBits >> 32);
-        lastChunk[15] = static_cast<std::int32_t>(inputBits);
-
-        for (const std::array<std::uint32_t, 16>& chunk : chunks) {
-            std::array<std::uint32_t, 64> w{}; // Message schedule
-            std::copy(chunk.begin(), chunk.end(), w.begin());
-
-            for (std::size_t i{16}; i < 64; ++i) {
-                w[i] = w[i - 16] + sigma0(w[i - 15]) + w[i - 7] + sigma1(w[i - 2]);
+            for (std::size_t j{16}; j < 64; ++j) {
+                w[j] = w[j - 16] + sigma0(w[j - 15]) + w[j - 7] + sigma1(w[j - 2]);
             }
 
             std::array<std::uint32_t, 8> hVars{hCopy};
 
-            for (std::size_t i{}; i < 64; ++i) {
+            for (std::size_t j{}; j < 64; ++j) {
                 std::uint32_t temp1{hVars[7] + sum1(hVars[4]) + ch(hVars[4], hVars[5], hVars[6])
-                    + vals.k[i] + w[i]};
+                    + vals.k[j] + w[j]};
                 std::uint32_t temp2{sum0(hVars[0]) + maj(hVars[0], hVars[1], hVars[2])};
 
                 hVars[7] = hVars[6];
@@ -192,8 +186,8 @@ namespace hashes {
                 hVars[0] = temp1 + temp2;
             }
 
-            for (int i{}; i < 8; ++i) {
-                hCopy[i] += hVars[i];
+            for (std::size_t j{}; j < 8; ++j) {
+                hCopy[j] += hVars[j];
             }
         }
 

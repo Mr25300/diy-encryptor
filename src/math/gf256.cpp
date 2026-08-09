@@ -34,33 +34,33 @@ namespace math {
     std::ostream& gfInt(std::ostream& os) { return setIWord(os, GFFormat::Int); }
     std::ostream& gfPoly(std::ostream& os) { return setIWord(os, GFFormat::Polynomial); }
 
-    std::ostream& operator<<(std::ostream& os, GF256 number) {
+    std::ostream& operator<<(std::ostream& os, GF256 num) {
         switch(getIWord(os)) {
             case GFFormat::Hex: {
                 os << "0x" << std::hex << std::setw(2) << std::setfill('0')
-                    << static_cast<int>(number.value) << std::dec;
+                    << static_cast<int>(num.value) << std::dec;
 
                 break;
             }
             case GFFormat::Binary: {
-                os << "0b" << std::bitset<8>(number.value).to_string();
+                os << "0b" << std::bitset<8>(num.value).to_string();
 
                 break;
             }
             case GFFormat::Char: {
-                os << static_cast<char>(number.value);
+                os << static_cast<char>(num.value);
 
                 break;
             }
             case GFFormat::Int: {
-                os << static_cast<int>(number.value);
+                os << static_cast<int>(num.value);
 
                 break;
             }
             case GFFormat::Polynomial: {
                 bool firstPlaced{false};
 
-                if (number.value == 0) {
+                if (num.value == 0) {
                     os << '0';
 
                     break;
@@ -69,7 +69,7 @@ namespace math {
                 std::uint8_t bitPos{0x80};
 
                 for (int i{7}; i >= 0; --i) {
-                    if (number.value & bitPos) {
+                    if (num.value & bitPos) {
                         if (firstPlaced) os << " + ";
 
                         firstPlaced = true;
