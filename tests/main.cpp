@@ -27,6 +27,7 @@ using ciphers::rij::SubstitutionBox;
 using ciphers::rij::KeySchedule;
 using ciphers::rij::Rijndael;
 using ciphers::modes::CBC;
+using padding::PKCS7;
 
 template <RijPolConcept Pol>
 void testKeySchedule(const bytes::ByteArr<Pol::kSize>& key, const std::array<bytes::ByteArr<Pol::bSize>, Pol::rounds + 1>& expected) {
@@ -86,10 +87,45 @@ void testCBC(
 
 template <std::size_t BlockSize>
 void testPKCS7(bytes::ByteVec input, const bytes::ByteVec& expected) {
-    padding::PKCS7<BlockSize>{}.pad(input);
+    PKCS7<BlockSize> padder{};
+
+    bytes::ByteVec inputCopy{input};
+
+    padder.pad(input);
 
     if (input != expected)
-        throw std::runtime_error("PKCS7 padding output does not match expected output.");
+        throw std::runtime_error("PKCS7 pad output does not match expected output.");
+
+    padder.unpad(input);
+
+    if (input != inputCopy)
+        throw std::runtime_error("PKCS7 unpad output does not match original input.");
+}
+
+template <RijPolConcept Pol>
+void testFullEncryption(
+    bytes::ByteVec input, const bytes::ByteArr<Pol::kSize>& key,
+    const bytes::ByteArr<Pol::bSize>& iv, const bytes::ByteVec& expected)
+{
+    SubstitutionBox subBox{};
+    KeySchedule<Pol> keySchedule{subBox, key};
+    Rijndael<Pol> aesCipher{subBox, keySchedule};
+    PKCS7<Pol::bSize> padder{};
+    CBC<Pol::bSize> cbcCipher{aesCipher, iv};
+
+    bytes::ByteVec inputCopy{input};
+
+    padder.pad(input);
+    cbcCipher.encrypt(input);
+
+    if (input != expected)
+        throw std::runtime_error("Full encryption output does not match expected output.");
+
+    cbcCipher.decrypt(input);
+    padder.unpad(input);
+
+    if (input != inputCopy)
+        throw std::runtime_error("Full decryption output does not match original input.");
 }
 
 void testSHA256(const bytes::ByteVec& input, const bytes::ByteArr<32>& expected) {
@@ -178,11 +214,9 @@ int main() {
         );
     });
 
-    // TODO: Add tests for 192 bit and 256 bit block sizes
+    TestSuite& rijTests{tests.createSuite("Rijndael Cipher")};
 
-    TestSuite& rijTest{tests.createSuite("Rijndael Cipher")};
-
-    rijTest.addCase("AES128", [] {
+    rijTests.addCase("AES128", [] {
         testRijndael<AES128>(
             parseHexStr<16>("3243f6a8885a308d313198a2e0370734"),
             parseHexStr<16>("2b7e151628aed2a6abf7158809cf4f3c"),
@@ -190,7 +224,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("AES128 again", [] {
+    rijTests.addCase("AES128 again", [] {
         testRijndael<AES128>(
             parseHexStr<16>("00112233445566778899aabbccddeeff"),
             parseHexStr<16>("000102030405060708090a0b0c0d0e0f"),
@@ -198,7 +232,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("AES192", [] {
+    rijTests.addCase("AES192", [] {
         testRijndael<AES192>(
             parseHexStr<16>("00112233445566778899aabbccddeeff"),
             parseHexStr<24>("000102030405060708090a0b0c0d0e0f1011121314151617"),
@@ -206,7 +240,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("AES256", [] {
+    rijTests.addCase("AES256", [] {
         testRijndael<AES256>(
             parseHexStr<16>("00112233445566778899aabbccddeeff"),
             parseHexStr<32>("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"),
@@ -214,7 +248,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("160 bit block, 128 bit key", [] {
+    rijTests.addCase("160 bit block, 128 bit key", [] {
         testRijndael<RijndaelPolicy<5, 4>>(
             parseHexStr<20>("9E38B8EB1D2025A1665AD4B1F5438BB5CAE1AC3F"),
             bytes::ByteArr<16>{},
@@ -222,7 +256,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("192 bit block, 128 bit key", [] {
+    rijTests.addCase("192 bit block, 128 bit key", [] {
         testRijndael<RijndaelPolicy<6, 4>>(
             parseHexStr<24>("A92732EB488D8BB98ECD8D95DC9C02E052F250AD369B3849"),
             bytes::ByteArr<16>{},
@@ -230,7 +264,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("224 bit block, 128 bit key", [] {
+    rijTests.addCase("224 bit block, 128 bit key", [] {
         testRijndael<RijndaelPolicy<7, 4>>(
             parseHexStr<28>("0623522D88F7B9C63437537157F625DD5697AB628A3B9BE2549895C8"),
             bytes::ByteArr<16>{},
@@ -238,7 +272,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("256 bit block, 128 bit key", [] {
+    rijTests.addCase("256 bit block, 128 bit key", [] {
         testRijndael<RijndaelPolicy<8, 4>>(
             parseHexStr<32>("A693B288DF7DAE5B1757640276439230DB77C4CD7A871E24D6162E54AF434891"),
             bytes::ByteArr<16>{},
@@ -246,7 +280,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("128 bit block, 160 bit key", [] {
+    rijTests.addCase("128 bit block, 160 bit key", [] {
         testRijndael<RijndaelPolicy<4, 5>>(
             parseHexStr<16>("94B434F8F57B9780F0EFF1A9EC4C112C"),
             bytes::ByteArr<20>{},
@@ -254,7 +288,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("160 bit block, 160 bit key", [] {
+    rijTests.addCase("160 bit block, 160 bit key", [] {
         testRijndael<RijndaelPolicy<5, 5>>(
             parseHexStr<20>("33B12AB81DB7972E8FDC529DDA46FCB529B31826"),
             bytes::ByteArr<20>{},
@@ -262,7 +296,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("192 bit block, 160 bit key", [] {
+    rijTests.addCase("192 bit block, 160 bit key", [] {
         testRijndael<RijndaelPolicy<6, 5>>(
             parseHexStr<24>("528E2FFF6005427B67BB1ED31ECC09A69EF41531DF5BA5B2"),
             bytes::ByteArr<20>{},
@@ -270,7 +304,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("224 bit block, 160 bit key", [] {
+    rijTests.addCase("224 bit block, 160 bit key", [] {
         testRijndael<RijndaelPolicy<7, 5>>(
             parseHexStr<28>("58A0C53F3822A32464704D409C2FD0521F3A93E1F6FCFD4C87F1C551"),
             bytes::ByteArr<20>{},
@@ -278,7 +312,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("256 bit block, 160 bit key", [] {
+    rijTests.addCase("256 bit block, 160 bit key", [] {
         testRijndael<RijndaelPolicy<8, 5>>(
             parseHexStr<32>("938D36E0CB6B7937841DAB7F1668E47B485D3ACD6B3F6D598B0A9F923823331D"),
             bytes::ByteArr<20>{},
@@ -286,7 +320,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("160 bit block, 192 bit key", [] {
+    rijTests.addCase("160 bit block, 192 bit key", [] {
         testRijndael<RijndaelPolicy<5, 6>>(
             parseHexStr<20>("33060F9D4705DDD2C7675F0099140E5A98729257"),
             bytes::ByteArr<24>{},
@@ -294,7 +328,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("192 bit block, 192 bit key", [] {
+    rijTests.addCase("192 bit block, 192 bit key", [] {
         testRijndael<RijndaelPolicy<6, 6>>(
             parseHexStr<24>("C6348BE20007BAC4A8BD62890C8147A2432E760E9A9F9AB8"),
             bytes::ByteArr<24>{},
@@ -302,7 +336,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("224 bit block, 192 bit key", [] {
+    rijTests.addCase("224 bit block, 192 bit key", [] {
         testRijndael<RijndaelPolicy<7, 6>>(
             parseHexStr<28>("3856B17BEA77C4611E3397066828AADDA004706A2C8009DF40A811FE"),
             bytes::ByteArr<24>{},
@@ -310,7 +344,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("256 bit block, 192 bit key", [] {
+    rijTests.addCase("256 bit block, 192 bit key", [] {
         testRijndael<RijndaelPolicy<8, 6>>(
             parseHexStr<32>("F927363EF5B3B4984A9EB9109844152EC167F08102644E3F9028070433DF9F2A"),
             bytes::ByteArr<24>{},
@@ -318,7 +352,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("128 bit block, 224 bit key", [] {
+    rijTests.addCase("128 bit block, 224 bit key", [] {
         testRijndael<RijndaelPolicy<4, 7>>(
             parseHexStr<16>("73F8DFF62A36F3EBF31D6F73A56FF279"),
             bytes::ByteArr<28>{},
@@ -326,7 +360,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("160 bit block, 224 bit key", [] {
+    rijTests.addCase("160 bit block, 224 bit key", [] {
         testRijndael<RijndaelPolicy<5, 7>>(
             parseHexStr<20>("E9F5EA0FA39BB6AD7339F28E58E2E7535F261827"),
             bytes::ByteArr<28>{},
@@ -334,7 +368,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("192 bit block, 224 bit key", [] {
+    rijTests.addCase("192 bit block, 224 bit key", [] {
         testRijndael<RijndaelPolicy<6, 7>>(
             parseHexStr<24>("ECBE9942CD6703E16D358A829D542456D71BD3408EB23C56"),
             bytes::ByteArr<28>{},
@@ -342,7 +376,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("224 bit block, 224 bit key", [] {
+    rijTests.addCase("224 bit block, 224 bit key", [] {
         testRijndael<RijndaelPolicy<7, 7>>(
             parseHexStr<28>("FE1CF0C8DDAD24E3D751933100E8E89B61CD5D31C96ABFF7209C495C"),
             bytes::ByteArr<28>{},
@@ -350,7 +384,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("256 bit block, 224 bit key", [] {
+    rijTests.addCase("256 bit block, 224 bit key", [] {
         testRijndael<RijndaelPolicy<8, 7>>(
             parseHexStr<32>("BC18BF6D369C955BBB271CBCDD66C368356DBA5B33C0005550D2320B1C617E21"),
             bytes::ByteArr<28>{},
@@ -358,7 +392,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("160 bit block, 256 bit key", [] {
+    rijTests.addCase("160 bit block, 256 bit key", [] {
         testRijndael<RijndaelPolicy<5, 8>>(
             parseHexStr<20>("30991844F72973B3B2161F1F11E7F8D9863C5118"),
             bytes::ByteArr<32>{},
@@ -366,7 +400,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("192 bit block, 256 bit key", [] {
+    rijTests.addCase("192 bit block, 256 bit key", [] {
         testRijndael<RijndaelPolicy<6, 8>>(
             parseHexStr<24>("17004E806FAEF168FC9CD56F98F070982075C70C8132B945"),
             bytes::ByteArr<32>{},
@@ -374,7 +408,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("224 bit block, 256 bit key", [] {
+    rijTests.addCase("224 bit block, 256 bit key", [] {
         testRijndael<RijndaelPolicy<7, 8>>(
             parseHexStr<28>("9BF26FAD5680D56B572067EC2FE162F449404C86303F8BE38FAB6E02"),
             bytes::ByteArr<32>{},
@@ -382,7 +416,7 @@ int main() {
         );
     });
 
-    rijTest.addCase("256 bit block, 256 bit key", [] {
+    rijTests.addCase("256 bit block, 256 bit key", [] {
         testRijndael<RijndaelPolicy<8, 8>>(
             parseHexStr<32>("C6227E7740B7E53B5CB77865278EAB0726F62366D9AABAD908936123A1FC8AF3"),
             bytes::ByteArr<32>{},
@@ -390,9 +424,9 @@ int main() {
         );
     });
 
-    TestSuite& cbcTest{tests.createSuite("CBC")};
+    TestSuite& cbcTests{tests.createSuite("CBC")};
 
-    cbcTest.addCase("Encrypting 16 bytes with AES128", [] {
+    cbcTests.addCase("Encrypting 16 bytes with AES128", [] {
         testCBC<AES128>(
             toBytes("Single block msg"),
             parseHexStr<16>("06a9214036b8a15b512e03d534120006"),
@@ -401,7 +435,7 @@ int main() {
         );
     });
 
-    cbcTest.addCase("Encrypting 32 bytes with AES128", [] {
+    cbcTests.addCase("Encrypting 32 bytes with AES128", [] {
         testCBC<AES128>(
             parseHexStr("000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"),
             parseHexStr<16>("c286696d887c9aa0611bbb3e2025a45a"),
@@ -410,7 +444,7 @@ int main() {
         );
     });
 
-    cbcTest.addCase("Encrypting 48 bytes with AES128", [] {
+    cbcTests.addCase("Encrypting 48 bytes with AES128", [] {
         testCBC<AES128>(
             toBytes("This is a 48-byte message (exactly 3 AES blocks)"),
             parseHexStr<16>("6c3ea0477630ce21a2ce334aa746c2cd"),
@@ -419,7 +453,7 @@ int main() {
         );
     });
 
-    cbcTest.addCase("Encrypting 64 bytes with AES128", [] {
+    cbcTests.addCase("Encrypting 64 bytes with AES128", [] {
         testCBC<AES128>(
             parseHexStr("a0a1a2a3a4a5a6a7a8a9aaabacadaeafb0b1b2b3b4b5b6b7b8b9babbbcbdbebfc0c1c2c3c4c5c6c7c8c9cacbcccdcecfd0d1d2d3d4d5d6d7d8d9dadbdcdddedf"),
             parseHexStr<16>("56e47a38c5598974bc46903dba290349"),
@@ -428,26 +462,46 @@ int main() {
         );
     });
 
-    TestSuite& pkcs7Test{tests.createSuite("PKCS7 Padding")};
+    TestSuite& pkcs7Tests{tests.createSuite("PKCS7 Padding")};
 
-    pkcs7Test.addCase("Small string and block size", [] {
+    pkcs7Tests.addCase("Small string and block size", [] {
         testPKCS7<8>(
             parseHexStr("58b3a9"),
             parseHexStr("58b3a90505050505")
         );
     });
 
-    pkcs7Test.addCase("Larger string and block size", [] {
+    pkcs7Tests.addCase("Larger string and block size", [] {
         testPKCS7<16>(
             parseHexStr("c3074bb2b49f5ba9a60b61306d2c"),
             parseHexStr("c3074bb2b49f5ba9a60b61306d2c0202")
         );
     });
 
-    pkcs7Test.addCase("Edge case", [] {
+    pkcs7Tests.addCase("Edge case", [] {
         testPKCS7<8>(
             parseHexStr("58b3a932078cfd19"),
             parseHexStr("58b3a932078cfd190808080808080808")
+        );
+    });
+
+    test::TestSuite& fullTests{tests.createSuite("Rijndael + Cipher Block Chaining + PKCS7")};
+
+    fullTests.addCase("Using AES128", [] {
+        testFullEncryption<AES128>(
+            toBytes("Here is my plaintext.", 10),
+            toBytes<16>("secretkeyyyyyyyy"),
+            toBytes<16>("initvectorrrrrrr"),
+            parseHexStr("BBFFD8670FAB11BA76BB69D9E276BAFAB2BD00EFADE2351D2A862077C2188868337274BB98B6199EF8C1DB30CB4C464C68961C50C70B87DC8F5CFBB8520942900EFCC33E1E68895650A10A52DAB13A0A7C7EEE90CC29C3F35580752D89CAD8F4AA8EE5EF263CB00E9B385B7B1874293AF6DC780F64209C3C2F47758DCBF7B7C728EDA9A3766203D9C349787B8E2D99FB50BA376D8281477AFA8F15C320ADA2A5D5C76892464EE38FBCCD59E1B986B69841E9725B0285FC0EF3609FD9A461A40C2F873341AFBFC113B464B432D9056A4A963F936B62018FD06899411AC24CBD6F")
+        );
+    });
+
+    fullTests.addCase("Using 256 bit block and 256 bit key Rijndael", [] {
+        testFullEncryption<RijndaelPolicy<8, 8>>(
+            toBytes("Here is my plaintext.", 10),
+            toBytes<32>("secretttttttttttkeyyyyyyyyyyyyyy"),
+            toBytes<32>("initializationnnvectorrrrrrrrrrr"),
+            parseHexStr("56B7228C9CA269C3B17CC39B198516EF5CA910B89910A0A97C1CC0C45EC69D8E8EADC53BAE8D34AE1F83BBDE557636CF6CBBEC2F906F214CCD6C8030D5C3C729D7FFAC65D7B6FD2E3AD88490B11ADE28ECC6EBF10821DD111FE1A53E72DA9C9CFFEF3EA95F8C3B6F5472F33966438EE89F6EB6DB33AC12FF430D9705B516A4171C2D828117A6C0DE084DE71F1D771B0A691922087EFDDB48A1CFE18AB1E6E19048516B0B41B29CB9290B15C26A33AA2BBF9A8BC0E0092853CBAB9AB46084DD46372F00BEC035AD88BD5F51EDCA850916DB626A4B232A621E00ED1187EBCD33F3")
         );
     });
 
