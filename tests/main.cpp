@@ -424,7 +424,7 @@ int main() {
         );
     });
 
-    TestSuite& cbcTests{tests.createSuite("CBC")};
+    TestSuite& cbcTests{tests.createSuite("Cipher Block Chaining")};
 
     cbcTests.addCase("Encrypting 16 bytes with AES128", [] {
         testCBC<AES128>(
