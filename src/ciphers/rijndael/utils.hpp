@@ -10,10 +10,6 @@ namespace ciphers::rij::utils {
     void subWord(Word& word, const SubstitutionBox& subBox, bool inverse = false);
     void applyConstant(Word& word, math::GF256 constant);
 
-    // Word& asWord(bytes::ByteArr<constants::rows>& bytes) {
-    //     return reinterpret_cast<Word&>(bytes);
-    // }
-
     template <std::size_t Cols>
     Block<Cols>& getBlockView(bytes::ByteArr<Cols * rows>& bytes) {
         return *reinterpret_cast<Block<Cols>*>(bytes.data());
@@ -47,7 +43,8 @@ namespace ciphers::rij::utils {
     void shiftRows(StateBlock<Pol>& block, bool invDir = false) {
         StateBlock<Pol> temp{block};
 
-        for (std::size_t i{1}; i < rows; ++i) { // Start at 1 since first row is not shifted
+        // Start at 1 since first row is not shifted
+        for (std::size_t i{1}; i < rows; ++i) {
             std::size_t offset{i};
 
             if (
@@ -57,7 +54,8 @@ namespace ciphers::rij::utils {
                 offset += 1;
             }
 
-            std::size_t modShift{offset % Pol::bCols}; // Shifting by offset is equivalent to offset + cols
+            // Shifting by offset is equivalent to offset + cols
+            std::size_t modShift{offset % Pol::bCols};
             std::size_t shift{invDir ? Pol::bCols - modShift : modShift};
 
             for (std::size_t j{}; j < Pol::bCols; ++j) {

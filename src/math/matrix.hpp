@@ -112,9 +112,22 @@ namespace math {
             return Matrix<T, Rows, NewCols>{values};
         }
 
-        template <std::size_t Size>
-        constexpr Matrix<T, Size, Size>& operator*=(const Matrix<T, Size, Size>& mat) {
-            // TODO: Implement method
+        constexpr Matrix<T, Rows, Cols>& operator*=(const Matrix<T, Rows, Cols>& mat) {
+            static_assert(Rows == Cols, "Matrix must be square to use the *= operator.");
+
+            std::array<Vector<T, Cols>, Rows> rowsCopy{rows};
+
+            for (std::size_t i{}; i < Rows; ++i) {
+                for (std::size_t j{}; j < Cols; ++j) {
+                    T sum{};
+
+                    for (int k{}; k < Cols; ++k) {
+                        sum += rowsCopy[i][k] * mat.rows[k][j];
+                    }
+
+                    rows[i][j] = sum;
+                }
+            }
 
             return *this;
         }

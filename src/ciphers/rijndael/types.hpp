@@ -23,7 +23,6 @@ namespace ciphers::rij {
     template <RijPolConcept Pol>
     using KeyBlock = Block<Pol::kCols>;
 
-    // TODO: maybe use inline and for other functions too
     template <std::size_t Cols>
     std::ostream& operator<<(std::ostream& stream, const Block<Cols>& block) {
         for (std::size_t i{}; i < rows; ++i) {

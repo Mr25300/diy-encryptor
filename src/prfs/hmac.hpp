@@ -8,7 +8,6 @@
 #include <cstdint>
 
 namespace prfs {
-    // TODO: See if OutputSize can be abstracted away and only accessed via method
     template <std::size_t BlockSize, std::size_t OutputSize>
     class HMAC : public PRF<OutputSize> {
         const hashes::Hash<BlockSize, OutputSize>& hash;

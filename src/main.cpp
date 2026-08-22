@@ -22,7 +22,7 @@ using ciphers::rij::KeySchedule;
 using ciphers::rij::Rijndael;
 using ciphers::modes::CBC;
 
-const std::size_t kdfIterations{600000}; // Should be 600000
+const std::size_t kdfIterations{600000};
 const std::size_t kdfSaltSize{32}; // In bytes
 
 const std::string encryptedExtension{".enc"};
@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
             if (argStr == "encrypt") encryptionMode = ENCRYPT;
             else if (argStr == "decrypt") encryptionMode = DECRYPT;
             else {
-                std::cerr << "Invalid encryption mode provided.";
+                std::cerr << "Invalid encryption mode provided.\n";
 
                 return 1;
             }
@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
             argStr != "--input" && argStr != "-i" &&
             argStr != "--output" && argStr != "-o"
         ) {
-            std::cerr << "Invalid argument provided.";
+            std::cerr << "Invalid argument provided.\n";
 
             return 1;
         }
@@ -68,24 +68,30 @@ int main(int argc, char* argv[]) {
     }
 
     if (filePathStr.empty()) {
-        std::cerr << "File path unspecified.";
+        std::cerr << "File path unspecified.\n";
 
         return 1;
     }
 
     if (encryptionMode == UNDEFINED) {
-        std::cerr << "Encryption mode unspecified.";
+        std::cerr << "Encryption mode unspecified.\n";
 
         return 1;
     }
 
-    std::filesystem::path inputPath(filePathStr); // TODO: Make sure this exists first before doing stuff below
+    std::filesystem::path inputPath(filePathStr);
+
+    if (!std::filesystem::exists(inputPath)) {
+        std::cerr << "File " << inputPath << " does not exist.\n";
+
+        return 1;
+    }
+
     std::filesystem::path outputPath;
     std::filesystem::path metadataPath;
 
     bytes::ByteArr<AESPol::bSize> cbcIV;
-    bytes::ByteVec kdfSalt; // TODO: Switch to ByteArr by using span for KDF.compute, PRF.compute and io functions
-    kdfSalt.reserve(kdfSaltSize);
+    bytes::ByteArr<kdfSaltSize> kdfSalt;
 
     if (outputDirStr.empty()) {
         outputPath = inputPath;
@@ -97,15 +103,17 @@ int main(int argc, char* argv[]) {
 
     if (encryptionMode == ENCRYPT) {
         if (inputPath.extension() == decryptedExtension) {
-            inputPath.replace_extension("");
+            outputPath.replace_extension("");
             metadataPath.replace_extension(metadataExtension);
         } else {
             outputPath += encryptedExtension;
             metadataPath += metadataExtension;
         }
 
+        std::cout << inputPath << ' ' << outputPath << ' ' << metadataPath << '\n';
+
         cbcIV = bytes::getRandBytes<AESPol::bSize>();
-        kdfSalt = bytes::getRandBytes(kdfSaltSize);
+        kdfSalt = bytes::getRandBytes<kdfSaltSize>();
 
     } else if (encryptionMode == DECRYPT) {
         if (inputPath.extension() == encryptedExtension) {
@@ -118,9 +126,14 @@ int main(int argc, char* argv[]) {
 
         bytes::ByteVec metaData{io::readFile(metadataPath)};
 
-        std::copy(metaData.begin(), metaData.begin() + cbcIV.size(), cbcIV.begin());
-        kdfSalt.insert(kdfSalt.end(), metaData.end() - kdfSaltSize, metaData.end());
-        // TODO: Add error handling for corruption here too
+        if (metaData.size() != AESPol::bSize + kdfSaltSize) {
+            std::cerr << "Initialization vector and/or KDF salt corrupted.\n";
+
+            return 1;
+        }
+
+        std::copy(metaData.begin(), metaData.begin() + AESPol::bSize, cbcIV.begin());
+        std::copy(metaData.end() - kdfSaltSize, metaData.end(), kdfSalt.begin());
     }
 
     std::vector<std::uint8_t> data{io::readFile(inputPath)};
