@@ -5,7 +5,7 @@ This project is a command-line tool for symmetric encryption and decryption. Wri
 
 # Highlights
 - **Built From Scratch**: All core operations and primitives, including Rijndael, CBC, SHA256, HMAC and PBKDF2, are built from scratch according to the RFC specifications.
-- **Simple to Use and Effective**: The CLI is easy to use, taking only a single input file and a single output file and having a maximum of 4 arguments.
+- **Simple to Use**: The CLI is easy to use, taking only a single input file, producing a single output file and having up to 4 arguments.
 - **Performance**: All algorithms are in-place and heap allocations are avoided whenever possible, making the tool extremely efficient.
 - **Rigorously Tested**: Each implementation has been tested for both validity and efficiency with a comprehensive test suite compiled from credible sources.
 
@@ -19,21 +19,21 @@ cd diy-encryptor
 
 make test # Run the test suite (shows detailed output)
 
-make # Build the tool (outputs to ./build/diy-encryptor)
+make # Build the tool (output executable to ./build/diy-encryptor)
 ```
 
 # Command-Line Interface & Usage
 
-## 1. Usage
+## Usage
 `diy-encryptor <encrypt | decrypt> <input path> [options]`
 
-## 2. Flags
+## Flags
 - `-o, --output <path>`: Directory to place the output file in, defaults to the parent directory of the input path.
-- `-d, --delete`: Deletes the original input file(s) after generating the output file(s).
+- `-d, --delete`: Deletes the original input file after generating the output file.
 
-## 3. Examples
+## Examples
 ```bash
-# Encrypt file and delete original
+# Encrypt file, place into  and delete original
 diy-encryptor encrypt /path/to/input/file -d
 
 # Decrypt file and place in a different directory
