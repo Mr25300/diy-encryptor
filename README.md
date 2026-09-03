@@ -3,10 +3,19 @@ This project is a command-line tool for symmetric encryption and decryption. Wri
 
 **Note**: This project was created for educational purposes in order to explore low-level programming and cryptography.
 
+# Design
+The tool uses 4 main components during the symmetric encryption and decryption process:
+- **Key Derivation Function (PBKDF2)**: Transforms the user-generated password and a random salt into a strong encryption key.
+- **Block Cipher (AES)**: Encrypts and decrypts a fixed-size block of data using the derived key.
+- **Mode of Operation (CBC)**: Chains cipher blocks together using an initialization vector (IV) so that identical plaintext blocks produce distinct ciphertexts. 
+- **Padding Scheme (PKCS7)**: Appends padding bytes to the input data so that it aligns with the block size.
+
+For portability, the IV and KDF salt are prepended to the ciphertext in a single file.
+
 # Highlights
-- **Built From Scratch**: All core operations and primitives, including Rijndael, CBC, SHA256, HMAC and PBKDF2, are built from scratch according to the RFC specifications.
-- **Simple to Use**: The CLI is easy to use, taking only a single input file, producing a single output file and having up to 4 arguments.
-- **Performance**: All algorithms are in-place and heap allocations are avoided whenever possible, making the tool extremely efficient.
+- **Built From Scratch**: All core operations and primitives, including Rijndael, CBC, SHA256, HMAC, and PBKDF2 are built from scratch according to their published specifications.
+- **Simple to Use**: The CLI has only 2 positional arguments and 2 possible flags, making it extremely easy to learn and use.
+- **Performant**: All algorithms are in-place and heap allocations are avoided wherever possible, making the tool extremely efficient.
 - **Rigorously Tested**: Each implementation has been tested for both validity and efficiency with a comprehensive test suite compiled from credible sources.
 
 # Compilation & Testing
@@ -33,9 +42,9 @@ make # Build the tool (output executable to ./build/diy-encryptor)
 
 ## Examples
 ```bash
-# Encrypt file, place into  and delete original
+# Encrypt a plaintext file, output the ciphertext file to the same directory, and delete the original file
 diy-encryptor encrypt /path/to/input/file -d
 
-# Decrypt file and place in a different directory
+# Decrypt a ciphertext file, output the plaintext file into a specific directory, and leave the original file
 diy-encryptor decrypt /path/to/input/file -o /path/to/output/dir
 ```
