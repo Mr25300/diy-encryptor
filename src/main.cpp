@@ -32,58 +32,63 @@ const std::string metadataExtension{".enc.meta"};
 enum EncryptionMode { ENCRYPT, DECRYPT, UNDEFINED };
 
 int main(int argc, char* argv[]) {
-    std::string prevArg;
+    EncryptionMode encryptionMode{UNDEFINED};
     std::string filePathStr;
     std::string outputDirStr;
-    EncryptionMode encryptionMode{UNDEFINED};
     bool deletePrev{false};
 
     for (int i{1}; i < argc; ++i) {
-        char* arg{argv[i]};
-        std::string argStr{std::string(arg)};
+        std::string arg{argv[i]};
 
-        if (prevArg == "--mode" || prevArg == "-m") {
-            if (argStr == "encrypt") encryptionMode = ENCRYPT;
-            else if (argStr == "decrypt") encryptionMode = DECRYPT;
-            else {
-                std::cerr << "Invalid encryption mode provided.\n";
-
+        if (arg == "--output" || arg == "-o") {
+            if (i >= argc - 1) {
+                std::cerr << "--output flag value not specified.\n";
                 return 1;
             }
-        }
-        else if (prevArg == "--input" || prevArg == "-i") filePathStr = arg;
-        else if (prevArg == "--output" || prevArg == "-o") outputDirStr = arg;
-        else if (argStr == "--delete" || argStr == "-d") deletePrev = true;
-        else if (
-            argStr != "--mode" && argStr != "-m" &&
-            argStr != "--input" && argStr != "-i" &&
-            argStr != "--output" && argStr != "-o"
-        ) {
-            std::cerr << "Invalid argument provided.\n";
 
+            outputDirStr = std::string{argv[i + 1]};
+            ++i;
+
+            continue;
+        }
+
+        if (arg == "--delete" || arg == "-d") {
+            deletePrev = true;
+
+            continue;
+        }
+
+        if (encryptionMode == UNDEFINED) {
+            if (arg == "encrypt") encryptionMode = ENCRYPT;
+            else if (arg == "decrypt") encryptionMode = DECRYPT;
+            else {
+                std::cerr << "Invalid encryption mode provided.\n";
+                return 1;
+            }
+
+        } else if (filePathStr.empty()) {
+            filePathStr = arg;
+
+        } else {
+            std::cerr << "Invalid argument provided.\n";
             return 1;
         }
-
-        prevArg = argStr;
-    }
-
-    if (filePathStr.empty()) {
-        std::cerr << "File path unspecified.\n";
-
-        return 1;
     }
 
     if (encryptionMode == UNDEFINED) {
         std::cerr << "Encryption mode unspecified.\n";
-
         return 1;
     }
 
-    std::filesystem::path inputPath(filePathStr);
+    if (filePathStr.empty()) {
+        std::cerr << "Input file path unspecified.\n";
+        return 1;
+    }
+
+    std::filesystem::path inputPath{filePathStr};
 
     if (!std::filesystem::exists(inputPath)) {
         std::cerr << "File " << inputPath << " does not exist.\n";
-
         return 1;
     }
 
