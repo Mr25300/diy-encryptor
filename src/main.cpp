@@ -25,9 +25,10 @@ using ciphers::modes::CBC;
 const std::size_t kdfIterations{600000};
 const std::size_t kdfSaltSize{32}; // In bytes
 
+const std::size_t headerSize{AESPol::bSize + kdfSaltSize};
+
 const std::string encryptedExtension{".enc"};
 const std::string decryptedExtension{".dec"};
-const std::string metadataExtension{".enc.meta"};
 
 enum EncryptionMode { ENCRYPT, DECRYPT, UNDEFINED };
 
@@ -92,30 +93,21 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::filesystem::path outputPath;
-    std::filesystem::path metadataPath;
-
+    bytes::ByteVec data{io::readFile(inputPath)};
     bytes::ByteArr<AESPol::bSize> cbcIV;
     bytes::ByteArr<kdfSaltSize> kdfSalt;
 
-    if (outputDirStr.empty()) {
-        outputPath = inputPath;
-        metadataPath = inputPath;
-    } else {
-        outputPath = outputDirStr / inputPath.filename();
-        metadataPath = outputDirStr / inputPath.filename();
-    }
+    std::filesystem::path outputPath;
+
+    if (outputDirStr.empty()) outputPath = inputPath;
+    else outputPath = std::filesystem::path{outputDirStr} / inputPath.filename();
 
     if (encryptionMode == ENCRYPT) {
         if (inputPath.extension() == decryptedExtension) {
             outputPath.replace_extension("");
-            metadataPath.replace_extension(metadataExtension);
         } else {
             outputPath += encryptedExtension;
-            metadataPath += metadataExtension;
         }
-
-        std::cout << inputPath << ' ' << outputPath << ' ' << metadataPath << '\n';
 
         cbcIV = bytes::getRandBytes<AESPol::bSize>();
         kdfSalt = bytes::getRandBytes<kdfSaltSize>();
@@ -123,25 +115,21 @@ int main(int argc, char* argv[]) {
     } else if (encryptionMode == DECRYPT) {
         if (inputPath.extension() == encryptedExtension) {
             outputPath.replace_extension("");
-            metadataPath.replace_extension(metadataExtension);
         } else {
             outputPath += decryptedExtension;
-            metadataPath += metadataExtension;
         }
 
-        bytes::ByteVec metaData{io::readFile(metadataPath)};
-
-        if (metaData.size() != AESPol::bSize + kdfSaltSize) {
+        if (data.size() < AESPol::bSize + kdfSaltSize) {
             std::cerr << "Initialization vector and/or KDF salt corrupted.\n";
-
             return 1;
         }
 
-        std::copy(metaData.begin(), metaData.begin() + AESPol::bSize, cbcIV.begin());
-        std::copy(metaData.end() - kdfSaltSize, metaData.end(), kdfSalt.begin());
-    }
+        std::copy(data.begin(), data.begin() + AESPol::bSize, cbcIV.begin());
+        std::copy(data.begin() + AESPol::bSize, data.begin() + headerSize, kdfSalt.begin());
 
-    std::vector<std::uint8_t> data{io::readFile(inputPath)};
+        // TODO: Try and get rid of this inefficiency by using a span
+        data.erase(data.begin(), data.begin() + headerSize);
+    }
 
     std::cout << (encryptionMode == ENCRYPT ? "Encrypting" : "Decrypting")
         << " file, input password key: ";
@@ -168,15 +156,15 @@ int main(int argc, char* argv[]) {
     } else {
         if (!cbcCipher.decrypt(data) || !padder.unpad(data)) {
             std::cerr << "Failed to decrypt file due to corruption.\n";
-
             return 1;
         }
     }
 
-    io::writeToFile(outputPath, data);
-
-    if (encryptionMode == ENCRYPT) io::writeToFile(metadataPath, bytes::getAppendBytes(cbcIV, kdfSalt));
-    else if (encryptionMode == DECRYPT) io::deleteFile(metadataPath);
+    if (encryptionMode == ENCRYPT) {
+        io::writeToFile(outputPath, {cbcIV, kdfSalt, data});
+    } else {
+        io::writeToFile(outputPath, data);
+    }
 
     if (deletePrev) io::deleteFile(inputPath);
 

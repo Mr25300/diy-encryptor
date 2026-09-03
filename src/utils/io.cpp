@@ -26,12 +26,19 @@ namespace io {
         return fileData;
     }
 
-    void writeToFile(const std::filesystem::path& filePath, const bytes::ByteVec& data) {
+    void writeToFile(const std::filesystem::path& filePath, std::initializer_list<bytes::ByteView> data) {
         std::ofstream file(filePath, std::ios::binary | std::ios::trunc);
         if (!file) throw std::ios_base::failure("Failed to write to file: " + filePath.string());
 
-        file.write(reinterpret_cast<const char*>(data.data()), data.size());
+        for (bytes::ByteView chunk : data) {
+            file.write(reinterpret_cast<const char*>(chunk.data()), chunk.size());
+        }
+
         file.close();
+    }
+
+    void writeToFile(const std::filesystem::path& filePath, bytes::ByteView data) {
+        writeToFile(filePath, {data});
     }
 
     void deleteFile(const std::filesystem::path& filePath) {
